@@ -6,6 +6,8 @@ MUSIC IS NOT INCLUDED WITH THE APP, FILL IT WITH YOUR OWN FILES. MP3 AND OGG CON
 
 Download: https://github.com/Damgam/Assetto-Corsa-Dynamic-Music-Player/releases
 
+Install: Drop the DynamicMusicPlayer folder into assettocorsa\apps\lua\
+
 Features:
 - Fully automated playlist creation, just drag and drop your audio files to folders,
 - 3 "Intensity" levels for race music,
