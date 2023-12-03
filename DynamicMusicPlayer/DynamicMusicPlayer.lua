@@ -1,16 +1,17 @@
 math.randomseed(os.preciseClock())
 
 -- Config
-MediumIntensityThreshold = 0.40 -- Low and Medium Intensity switch level. Scale 0 to 1
-HighIntensityThreshold = 0.75 -- Medium and High Intensity switch level. Scale 0 to 1
+MediumIntensityThreshold = 0.30 -- Low and Medium Intensity switch level. Scale 0 to 1
+HighIntensityThreshold = 0.60 -- Medium and High Intensity switch level. Scale 0 to 1
 
 PracticeAlwaysLow = true -- Always play Low Intensity tracks in Practice mode
 QualifyingAlwaysLow = false -- Always play Low Intensity tracks in Qualifying mode
+PodiumFinishTop25Percent = true -- if true, podium music plays if you end up in top 25%, if false, plays when you end up in the podium.
 
-MaxVolume = 0.4
-MinTargetVolumeMultiplier = 0.3 -- How much can the volume be turned down by dynamic volume controllers
+MaxVolume = 0.35
+MinTargetVolumeMultiplier = 0.2 -- How much can the volume be turned down by dynamic volume controllers
 PauseVolumeMultiplier = 0.1 -- Music Volume modifier for when game is paused
-FadeSpeed = 0.02 -- Percentage per frame. too low might cause problems.
+FadeSpeed = 0.01 -- Percentage per frame. too low might cause problems.
 
 EnableInterruptions = true -- cut off mid-tracks on significant intensity changes
 
@@ -37,7 +38,7 @@ FinishPodiumMusic = table.map(io.scanDir( __dirname .. FinishPodiumDir, '*'), fu
 ReplayDir = '/Music/Replay'
 ReplayMusic = table.map(io.scanDir( __dirname .. ReplayDir, '*'), function (x) return { string.sub(x, 1, #x - 4), ReplayDir .. '/' .. x } end)
 
-TargetVolume = -1
+TargetVolume = -10
 TargetVolumeMultiplier = 1
 CurrentVolume = 0
 IntensityLevel = 0
@@ -46,7 +47,6 @@ IntensityLevel = 0
 Sim                         = ac.getSim()
 Car                         = ac.getCar(Sim.focusedCar)
 Session                     = ac.getSession(Sim.currentSessionIndex)
-CarsInRace                  = #Session.leaderboard
 CarsInRace                  = #Session.leaderboard
 PlayerCarPosition           = Car.racePosition
 PositionIntensity           = (-((PlayerCarPosition - 1)/(CarsInRace - 1)))+1
@@ -75,22 +75,22 @@ function updateRaceStatusData()
         local CarIndex = Session.leaderboard[i-1].car.index
         local CarPosition = ac.getCar(CarIndex).racePosition
         if CarPosition == PlayerCarPosition - 1 then
-            gapToFront = ac.getGapBetweenCars(CarIndex, Car.index)
+            GapToFront = ac.getGapBetweenCars(CarIndex, Car.index)
             --ac.log("CarInFront", CarPosition)
             CarInFront = true
         end
         if CarPosition == PlayerCarPosition + 1 then
-            gapToRear = ac.getGapBetweenCars(CarIndex, Car.index)
+            GapToRear = ac.getGapBetweenCars(CarIndex, Car.index)
             --ac.log("CarInRear", CarPosition)
             CarInRear = true
         end
     end
 
-    if not CarInFront then gapToFront = 10 end
-    if not CarInRear then gapToRear = 10 end
+    if not CarInFront then GapToFront = 10 end
+    if not CarInRear then GapToRear = 10 end
 
     if PlayerFinished then
-        TargetVolumeMultiplier = 1.25
+        TargetVolumeMultiplier = 1
     elseif Sim.isPaused then
         TargetVolumeMultiplier = PauseVolumeMultiplier
     elseif EnableDynamicCautionVolume and (Sim.raceFlagType == 2 or Sim.raceFlagType == 8) then
@@ -104,12 +104,12 @@ function updateRaceStatusData()
             SpeedVolumeMultiplier = 1
         end
         if EnableDynamicProximityVolume then
-            ProximityVolumeMultiplier = math.min(math.min(-gapToFront/2 or 10, 1), math.min(gapToRear/2 or 10), 1)
+            ProximityVolumeMultiplier = math.min(math.min(-GapToFront or 10, 1), math.min(GapToRear or 10, 1))
         else
             ProximityVolumeMultiplier = 1
         end
-        --ac.log("gapToFront", gapToFront)
-        --ac.log("gapToRear", gapToRear)
+        --ac.log("GapToFront", GapToFront)
+        --ac.log("GapToRear", GapToRear)
         TargetVolumeMultiplier = math.max(math.min(SpeedVolumeMultiplier, ProximityVolumeMultiplier), MinTargetVolumeMultiplier)
     else
         if EnableDynamicSpeedVolume then
@@ -129,9 +129,25 @@ function updateRaceStatusData()
     end
 
     if (not Session.isTimedRace) and Session.type == 3 then
-        IntensityLevel = (PositionIntensity+LapIntensity)/2
+        IntensityLevel = (PositionIntensity+(LapIntensity*3))/4
     else
-        IntensityLevel = (PositionIntensity+TimeIntensity)/2
+        IntensityLevel = (PositionIntensity+(TimeIntensity*3))/4
+    end
+
+    if IntensityLevel > 0.95 then
+        TargetVolumeMultiplier = math.min(TargetVolumeMultiplier + 0.15, 1)
+    elseif IntensityLevel > 0.90 then
+        TargetVolumeMultiplier = math.min(TargetVolumeMultiplier + 0.1, 1)
+    elseif IntensityLevel > 0.85 then
+        TargetVolumeMultiplier = math.min(TargetVolumeMultiplier + 0.05, 1)
+    end
+
+    if PlayerCarPosition == 1 then
+        TargetVolumeMultiplier = math.min(TargetVolumeMultiplier + 0.15, 1)
+    elseif PlayerCarPosition <= 3 then
+        TargetVolumeMultiplier = math.min(TargetVolumeMultiplier + 0.1, 1)
+    elseif PlayerCarPosition <= 5 then
+        TargetVolumeMultiplier = math.min(TargetVolumeMultiplier + 0.05, 1)
     end
 
     if (not Sim.isReplayActive) and EnableInterruptions and Session.type ~= 1 and (not PlayerFinished) then
@@ -139,11 +155,15 @@ function updateRaceStatusData()
         (PreviousTrackIntensity < HighIntensityThreshold and IntensityLevel > HighIntensityThreshold*1.10) or
         (PreviousTrackIntensity > MediumIntensityThreshold and IntensityLevel < MediumIntensityThreshold*0.9) or
         (PreviousTrackIntensity > HighIntensityThreshold and IntensityLevel < HighIntensityThreshold*0.9) then
-            TargetVolume = -1
+            TargetVolume = -10
             ForcePlayNewTrack = true
         end
     end
 
+    if CurrentTrack and CurrentTrack:duration() < CurrentTrack:currentTime() - 5 then
+        TargetVolume = -10
+        ForcePlayNewTrack = true
+    end
 end
 updateRaceStatusData()
 
@@ -179,7 +199,7 @@ function getNewTrack()
 end
 
 function getFinishTrack(pos)
-    if pos <= 3 then
+    if pos <= 3 or (PodiumFinishTop25Percent and pos <= CarsInRace*0.25) then
         FilePath = FinishPodiumMusic[math.random(1,#FinishPodiumMusic)][2]
     else
         FilePath = FinishMusic[math.random(1,#FinishMusic)][2]
@@ -206,11 +226,11 @@ function script.update(dt)
             PlayedFinishMusic = false
             PlayerFinished = false
             PreviousSessionIndex = Sim.currentSessionIndex
-            TargetVolume = -1
+            TargetVolume = -10
         end
 
         if ac.getSim().timeToSessionStart > 0 then
-            TargetVolume = -1
+            TargetVolume = -10
         end
         
         if Session.type == 3 and PlayerFinished and (not PlayedFinishMusic) then
@@ -226,7 +246,7 @@ function script.update(dt)
         end
     end
 
-    if StartMusic or ( MusicInitialised and (CurrentTrack ~= nil and CurrentTrack:ended()) or CurrentTrack == nil ) and (not PlayerFinished) then
+    if StartMusic or ( MusicInitialised and (CurrentTrack ~= nil and CurrentTrack:ended()) or CurrentTrack == nil ) and (not PlayerFinished) and Sim.timeToSessionStart < 0 then
         updateRaceStatusData()
 
         CurrentTrack = ui.MediaPlayer(getNewTrack())
