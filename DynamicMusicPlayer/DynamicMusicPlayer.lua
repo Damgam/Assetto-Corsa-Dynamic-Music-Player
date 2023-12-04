@@ -5,18 +5,18 @@ MediumIntensityThreshold = 0.30 -- Low and Medium Intensity switch level. Scale 
 HighIntensityThreshold = 0.60 -- Medium and High Intensity switch level. Scale 0 to 1
 
 PracticeAlwaysLow = true -- Always play Low Intensity tracks in Practice mode
-QualifyingAlwaysLow = false -- Always play Low Intensity tracks in Qualifying mode
-PodiumFinishTop25Percent = true -- if true, podium music plays if you end up in top 25%, if false, plays when you end up in the podium.
+QualifyingAlwaysLow = true -- Always play Low Intensity tracks in Qualifying mode
+PodiumFinishTop25Percent = true -- if true, podium music plays if you end up in top 25%, if false, plays when you end up in the podium. // Apparently Finish music is broken in Online, yay!
 
-MaxVolume = 0.35
-MinTargetVolumeMultiplier = 0.2 -- How much can the volume be turned down by dynamic volume controllers
+MaxVolume = 0.3
+MinTargetVolumeMultiplier = 0.3 -- How much can the volume be turned down by dynamic volume controllers
 PauseVolumeMultiplier = 0.1 -- Music Volume modifier for when game is paused
 FadeSpeed = 0.01 -- Percentage per frame. too low might cause problems.
 
 EnableInterruptions = true -- cut off mid-tracks on significant intensity changes
 
 EnableDynamicCautionVolume = true -- turn down music volume during blue and yellow flags.
-EnableDynamicProximityVolume = true -- turn down music volume when opponents are nearby - Only works in race!
+EnableDynamicProximityVolume = true -- turn down music volume when opponents are nearby - Only works in race! // Actually broken as hell in Online right now. This option is force disabled in online for the time being.
 EnableDynamicSpeedVolume = true -- turn down music volume depending on speed of your car
 
 -- List of files to load. Might turn it into dynamic search if I ever figure out how to do it.
@@ -93,9 +93,9 @@ function updateRaceStatusData()
         TargetVolumeMultiplier = 1
     elseif Sim.isPaused then
         TargetVolumeMultiplier = PauseVolumeMultiplier
-    elseif EnableDynamicCautionVolume and (Sim.raceFlagType == 2 or Sim.raceFlagType == 8) then
+    elseif EnableDynamicCautionVolume and (Sim.raceFlagType == 2 or Sim.raceFlagType == 8 or Sim.raceFlagType == 12) then
         TargetVolumeMultiplier = MinTargetVolumeMultiplier
-    elseif Session.type == 3 then
+    elseif Session.type == 3 and not Sim.isOnlineRace then -- yet another dirty online fix
         local SpeedVolumeMultiplier
         local ProximityVolumeMultiplier
         if EnableDynamicSpeedVolume then
@@ -127,30 +127,34 @@ function updateRaceStatusData()
         end
         InitDone = true
     end
-
+    if Sim.isOnlineRace then -- yet another dirty fix for broken online
+        PositionIntensity = 1
+    end
     if (not Session.isTimedRace) and Session.type == 3 then
         IntensityLevel = (PositionIntensity+(LapIntensity*3))/4
     else
         IntensityLevel = (PositionIntensity+(TimeIntensity*3))/4
     end
 
-    if IntensityLevel > 0.95 then
-        TargetVolumeMultiplier = math.min(TargetVolumeMultiplier + 0.15, 1)
-    elseif IntensityLevel > 0.90 then
-        TargetVolumeMultiplier = math.min(TargetVolumeMultiplier + 0.1, 1)
-    elseif IntensityLevel > 0.85 then
-        TargetVolumeMultiplier = math.min(TargetVolumeMultiplier + 0.05, 1)
+    if not Sim.isOnlineRace then -- Positions are currently broken in online so lets only use this feature in offline for now
+        if IntensityLevel > 0.95 then
+            TargetVolumeMultiplier = math.min(TargetVolumeMultiplier + TargetVolumeMultiplier*0.3, 1)
+        elseif IntensityLevel > 0.90 then
+            TargetVolumeMultiplier = math.min(TargetVolumeMultiplier + TargetVolumeMultiplier*0.2, 1)
+        elseif IntensityLevel > 0.85 then
+            TargetVolumeMultiplier = math.min(TargetVolumeMultiplier + TargetVolumeMultiplier*0.1, 1)
+        end
+
+        if PlayerCarPosition == 1 then
+            TargetVolumeMultiplier = math.min(TargetVolumeMultiplier + TargetVolumeMultiplier*0.3, 1)
+        elseif PlayerCarPosition <= 3 then
+            TargetVolumeMultiplier = math.min(TargetVolumeMultiplier + TargetVolumeMultiplier*0.2, 1)
+        elseif PlayerCarPosition <= 5 then
+            TargetVolumeMultiplier = math.min(TargetVolumeMultiplier + TargetVolumeMultiplier*0.1, 1)
+        end
     end
 
-    if PlayerCarPosition == 1 then
-        TargetVolumeMultiplier = math.min(TargetVolumeMultiplier + 0.15, 1)
-    elseif PlayerCarPosition <= 3 then
-        TargetVolumeMultiplier = math.min(TargetVolumeMultiplier + 0.1, 1)
-    elseif PlayerCarPosition <= 5 then
-        TargetVolumeMultiplier = math.min(TargetVolumeMultiplier + 0.05, 1)
-    end
-
-    if (not Sim.isReplayActive) and EnableInterruptions and Session.type ~= 1 and (not PlayerFinished) then
+    if (not Sim.isReplayActive) and EnableInterruptions and (Session.type ~= 1 or Session.type ~= 2) and (not PlayerFinished) then
         if (PreviousTrackIntensity < MediumIntensityThreshold and IntensityLevel > MediumIntensityThreshold*1.10) or
         (PreviousTrackIntensity < HighIntensityThreshold and IntensityLevel > HighIntensityThreshold*1.10) or
         (PreviousTrackIntensity > MediumIntensityThreshold and IntensityLevel < MediumIntensityThreshold*0.9) or
@@ -164,17 +168,18 @@ function updateRaceStatusData()
         TargetVolume = -10
         ForcePlayNewTrack = true
     end
+
 end
 updateRaceStatusData()
 
 
 function getNewTrack()
 
-    --ac.log("IntensityLevel", IntensityLevel)
-    --ac.log("Session Type", Session.type)
-    --ac.log("PositionIntensity", PositionIntensity)
-    --ac.log("TimeIntensity", TimeIntensity)
-    --ac.log("LapIntensity", LapIntensity)
+    -- ac.log("IntensityLevel", IntensityLevel)
+    -- ac.log("Session Type", Session.type)
+    -- ac.log("PositionIntensity", PositionIntensity)
+    -- ac.log("TimeIntensity", TimeIntensity)
+    -- ac.log("LapIntensity", LapIntensity)
     local testFilePath
     repeat
         if Sim.isReplayActive then
