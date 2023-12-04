@@ -1,4 +1,4 @@
-Dynamic Music Player for Assetto Corsa!
+Dynamic Music Player for Assetto Corsa! REQUIRES CUSTOM SHADERS PATCH!
 
 Music Player that reacts to what's happening on the track, controlling music playlists and volume.
 
