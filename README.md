@@ -25,7 +25,7 @@ Known Issues:
 - Each playlist needs to have at least 2 files to avoid infinite loop (that prevents the same track to play twice in a row),
 - Due to Lua API call for leaderboards being broken, online mode does not use features related to your position in the race. Intensity levels are purely race progression based,
 - For the same reason, finish music will certainly be wrong in Online. It will work, but it will use your bugged position to determine if it should play podium music or lose music,
-- Default volume balancing might be a bit too wild for some. Config coming soon, until then you can edit the Lua file with your own values. Config stuff is at the very top of the file.
+- Default volume balancing might be a bit too wild for some.
 
 Presentation Video:
 
