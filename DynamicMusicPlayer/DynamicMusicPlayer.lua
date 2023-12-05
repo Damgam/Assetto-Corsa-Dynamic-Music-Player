@@ -15,7 +15,7 @@ ConfigMaxVolume = ConfigFile:get("settings", "volume", 0.8333) -- Volume relativ
 ConfigMinTargetVolumeMultiplier = ConfigFile:get("settings", "minvolume", 0.4) -- How much can the volume be turned down by dynamic volume controllers. It's percentage of MaxVolume, not an absolute value.
 PauseVolumeMultiplier = 0.1 -- Music Volume modifier for when game is paused. It's percentage of MaxVolume, not an absolute value.
 ConfigFadeInSpeed = ConfigFile:get("settings", "fadein", 1) -- Percentage per 5 frames. too low might cause problems. Relative to ingame Master volume value.
-ConfigFadeOutSpeed = ConfigFile:get("settings", "fadeout", 5)-- Percentage per 5 frames. too low might cause problems. Relative to ingame Master volume value.
+ConfigFadeOutSpeed = ConfigFile:get("settings", "fadeout", 1)-- Percentage per 5 frames. too low might cause problems. Relative to ingame Master volume value.
 
 EnableDynamicCautionVolume = ConfigFile:get("settings", "cautionfadeout", 1) -- turn down music volume during blue and yellow flags, and when you get a penalty.
 EnableDynamicProximityVolume = ConfigFile:get("settings", "proximityfadeout", 1) -- turn down music volume when opponents are nearby
@@ -68,12 +68,15 @@ AverageSpeed                = 200
 
 IntensityLevel = 0
 
+FadeIntSpeedMultiplier = 1
+FadeOutSpeedMultiplier = 1
+
 function updateConfig()
     local MasterVolume = ac.getAudioVolume('main')
     MaxVolume = ConfigMaxVolume * MasterVolume
     MinTargetVolumeMultiplier = ConfigMinTargetVolumeMultiplier
-    FadeInSpeed = 0.005 * ConfigFadeInSpeed * MasterVolume * MaxVolume
-    FadeOutSpeed = 0.005 * ConfigFadeOutSpeed * MasterVolume * MaxVolume
+    FadeInSpeed = 0.01 * ConfigFadeInSpeed * MasterVolume * MaxVolume
+    FadeOutSpeed = 0.05 * ConfigFadeOutSpeed * MasterVolume * MaxVolume
 end
 updateConfig()
 
@@ -198,9 +201,9 @@ function updateRaceStatusData()
     (MusicType  ~= "replay" and Sim.isReplayActive) or -- We're in replay but replay music is not playing
     (MusicType  == "waiting" and PlayerCarSpeed >= 1) or -- Idle Music is playing but we're moving
     (MusicType  ~= "waiting" and PlayerCarSpeed < 1 and IdleTimer > 10 and MusicType  ~= "finish") or -- We're Idle but non-idle music is playing, just make sure it's not playing finish music.
-    (MusicType  == "practice" and Sim.raceSessionType ~= 1) or -- Practice music is playing but we're not in practice
-    (MusicType  == "quali" and Sim.raceSessionType ~= 2) or -- Qualification music is playing but we're not in qualis
-    ((MusicType == "lowintensity" or MusicType == "highintensity") and Sim.raceSessionType ~= 3) or -- Race music is playing but we're not in race
+    (MusicType  == "practice" and Session.type ~= 1) or -- Practice music is playing but we're not in practice
+    (MusicType  == "quali" and (Session.type ~= 2 or Session.type ~= 4 or Session.type ~= 5)) or -- Qualification music is playing but we're not in qualis
+    ((MusicType == "lowintensity" or MusicType == "highintensity") and Session.type ~= 3) or -- Race music is playing but we're not in race
     (MusicType  == "lowintensity" and IntensityLevel > HighIntensityThreshold*1.1) or -- Low intensity music is playing but it should be playing high instead
     (MusicType  == "highintensity" and IntensityLevel < HighIntensityThreshold*0.9) or -- High intensity music is playing but it should be playing low instead
     (MusicType  ~= "finish" and PlayerFinished) or -- Player has finished the race
@@ -211,6 +214,24 @@ function updateRaceStatusData()
     else
         TargetVolume = MaxVolume
     end
+
+    if MusicType and ( -- boost fade-in music 
+    (MusicType == "finish")
+    ) then
+        FadeInSpeedMultiplier = 10
+    else
+        FadeInSpeedMultiplier = 1
+    end
+
+    if MusicType and ( -- boost fade-out music 
+    (MusicType ~= "finish" and PlayerFinished)
+    ) then
+        FadeOutSpeedMultiplier = 10
+    else
+        FadeOutSpeedMultiplier = 1
+    end
+
+    
 end
 updateRaceStatusData()
 
@@ -297,7 +318,7 @@ function script.update(dt)
 
     if UpdateCounter%5 == 1 then
         if CurrentTrack and CurrentVolume >= (TargetVolume*TargetVolumeMultiplier) + math.min(FadeInSpeed, FadeOutSpeed) then
-            CurrentVolume = CurrentVolume - FadeOutSpeed
+            CurrentVolume = CurrentVolume - (FadeOutSpeed*FadeOutSpeedMultiplier)
             CurrentTrack:setVolume(CurrentVolume)
             if CurrentVolume <= 0 and TargetVolume < 0 then
                 CurrentTrack:setVolume(0)
@@ -305,7 +326,7 @@ function script.update(dt)
                 CurrentVolume = 0
             end
         elseif CurrentTrack and CurrentVolume <= (TargetVolume*TargetVolumeMultiplier) - math.min(FadeInSpeed, FadeOutSpeed) then
-            CurrentVolume = CurrentVolume + FadeInSpeed
+            CurrentVolume = CurrentVolume + (FadeInSpeed*FadeInSpeedMultiplier)
             CurrentTrack:setVolume(CurrentVolume)
         end
     end
@@ -359,8 +380,8 @@ function script.windowMain()
     end
     ui.separator()
     ui.text('Fade-Out Speed Multiplier')
-    local sliderValue4 = ConfigFile:get("settings", "fadeout", 5)
-    sliderValue4 = ui.slider("(Default 5) ##slider4", sliderValue4, 0.25, 10)
+    local sliderValue4 = ConfigFile:get("settings", "fadeout", 1)
+    sliderValue4 = ui.slider("(Default 1) ##slider4", sliderValue4, 0.25, 10)
     if ConfigFadeOutSpeed ~= sliderValue4 then
         ConfigFadeOutSpeed = sliderValue4
         ConfigFile:set("settings", "fadeout", sliderValue4)
