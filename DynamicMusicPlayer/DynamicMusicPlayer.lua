@@ -73,7 +73,7 @@ function updateConfig()
     MaxVolume = ConfigMaxVolume * MasterVolume
     MinTargetVolumeMultiplier = ConfigMinTargetVolumeMultiplier
     FadeInSpeed = 0.00333 * ConfigFadeInSpeed * MasterVolume * MaxVolume
-    FadeOutSpeed = 0.01666 * ConfigFadeOutSpeed * MasterVolume * MaxVolume
+    FadeOutSpeed = 0.00333 * ConfigFadeOutSpeed * MasterVolume * MaxVolume
 end
 updateConfig()
 
