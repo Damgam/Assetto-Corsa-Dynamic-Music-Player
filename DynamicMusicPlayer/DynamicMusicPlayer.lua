@@ -1,23 +1,25 @@
 math.randomseed(os.preciseClock())
 
+ConfigFile = ac.INIConfig.load(ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/" .. "settings.ini")
+
 -- Config
+EnableMusic = ConfigFile:get("settings", "appenabled", 1)
+
 HighIntensityThreshold = 0.60 -- Low and High Intensity switch level. Scale 0 to 1
 
-EnablePracticePlaylist = true -- Enable Practice mode playlist, otherwise use Race music
-EnableQualifyingPlaylist = true -- Enable Qualification mode playlist, otherwise use Race music
-PodiumFinishTop25Percent = true -- if true, podium music plays if you end up in top 25%, if false, plays when you end up in the podium. // Apparently Finish music is broken in Online, yay!
+EnablePracticePlaylist = ConfigFile:get("settings", "practiceenabled", 1) -- Enable Practice mode playlist, otherwise use Race music
+EnableQualifyingPlaylist = ConfigFile:get("settings", "qualifyingenabled", 1) -- Enable Qualification mode playlist, otherwise use Race music
+PodiumFinishTop25Percent = ConfigFile:get("settings", "podiumtop25", 1) -- if true, podium music plays if you end up in top 25%, if false, plays when you end up in the podium. // Apparently Finish music is broken in Online, yay!
 
-MaxVolume = 0.3
-MinTargetVolumeMultiplier = 0.3 -- How much can the volume be turned down by dynamic volume controllers
-PauseVolumeMultiplier = 0.1 -- Music Volume modifier for when game is paused
-FadeInSpeed = 0.001 -- Percentage per 5 frames. too low might cause problems.
-FadeOutSpeed = 0.005 -- Percentage per 5 frames. too low might cause problems.
+ConfigMaxVolume = ConfigFile:get("settings", "volume", 0.8333) -- Volume relative to ingame Master volume value, percentage.
+ConfigMinTargetVolumeMultiplier = ConfigFile:get("settings", "minvolume", 0.4) -- How much can the volume be turned down by dynamic volume controllers. It's percentage of MaxVolume, not an absolute value.
+PauseVolumeMultiplier = 0.1 -- Music Volume modifier for when game is paused. It's percentage of MaxVolume, not an absolute value.
+ConfigFadeInSpeed = ConfigFile:get("settings", "fadein", 1) -- Percentage per 5 frames. too low might cause problems. Relative to ingame Master volume value.
+ConfigFadeOutSpeed = ConfigFile:get("settings", "fadeout", 5)-- Percentage per 5 frames. too low might cause problems. Relative to ingame Master volume value.
 
-EnableInterruptions = true -- cut off mid-tracks on significant intensity changes
-
-EnableDynamicCautionVolume = true -- turn down music volume during blue and yellow flags, and when you get a penalty.
-EnableDynamicProximityVolume = true -- turn down music volume when opponents are nearby
-EnableDynamicSpeedVolume = true -- turn down music volume depending on speed of your car
+EnableDynamicCautionVolume = ConfigFile:get("settings", "cautionfadeout", 1) -- turn down music volume during blue and yellow flags, and when you get a penalty.
+EnableDynamicProximityVolume = ConfigFile:get("settings", "proximityfadeout", 1) -- turn down music volume when opponents are nearby
+EnableDynamicSpeedVolume = ConfigFile:get("settings", "speedfadeout", 1) -- turn down music volume depending on speed of your car
 
 -- List of files to load. Might turn it into dynamic search if I ever figure out how to do it.
 LowDir = '/Music/LowIntensity'
@@ -56,7 +58,7 @@ Sim                         = ac.getSim()
 Car                         = ac.getCar(Sim.focusedCar)
 Session                     = ac.getSession(Sim.currentSessionIndex)
 CarsInRace                  = #Session.leaderboard
-PlayerCarRacePosition           = Car.racePosition
+PlayerCarRacePosition       = Car.racePosition
 PositionIntensity           = (-((PlayerCarRacePosition - 1)/(CarsInRace - 1)))+1
 TimeIntensity               = (-((Sim.sessionTimeLeft/1000/60)/(Session.durationMinutes)))+1
 LapIntensity                = (Car.sessionLapCount+1)/Session.laps
@@ -65,6 +67,15 @@ PlayerBestLapTime           = 180
 AverageSpeed                = 200
 
 IntensityLevel = 0
+
+function updateConfig()
+    local MasterVolume = ac.getAudioVolume('main')
+    MaxVolume = ConfigMaxVolume * MasterVolume
+    MinTargetVolumeMultiplier = ConfigMinTargetVolumeMultiplier
+    FadeInSpeed = 0.00333 * ConfigFadeInSpeed * MasterVolume * MaxVolume
+    FadeOutSpeed = 0.01666 * ConfigFadeOutSpeed * MasterVolume * MaxVolume
+end
+updateConfig()
 
 function updateRaceStatusData()
 
@@ -193,9 +204,12 @@ function updateRaceStatusData()
     (MusicType  == "lowintensity" and IntensityLevel > HighIntensityThreshold*1.1) or -- Low intensity music is playing but it should be playing high instead
     (MusicType  == "highintensity" and IntensityLevel < HighIntensityThreshold*0.9) or -- High intensity music is playing but it should be playing low instead
     (MusicType  ~= "finish" and PlayerFinished) or -- Player has finished the race
+    (EnableMusic == false) or
     (CurrentTrack and CurrentTrack:currentTime() > CurrentTrack:duration() - 2) -- Track is almost over, fade it out.
     ) then
         TargetVolume = -10
+    else
+        TargetVolume = MaxVolume
     end
 end
 updateRaceStatusData()
@@ -230,7 +244,7 @@ function getNewTrack()
             testFilePath = PracticeMusic[math.random(1,#PracticeMusic)][2]
             MusicType = "practice"
 
-        elseif (EnableQualifyingPlaylist and Session.type == 2) then
+        elseif (EnableQualifyingPlaylist and (Session.type == 2 or Session.type == 4 or Session.type == 5)) then
 
             testFilePath = QualificationMusic[math.random(1,#QualificationMusic)][2]
             MusicType = "quali"
@@ -263,10 +277,11 @@ function script.update(dt)
     UpdateCounter = UpdateCounter+1
 
     if UpdateCounter%60 == 0 then -- Script Updates
+        updateConfig()
         updateRaceStatusData()
     end
 
-    if UpdateCounter%60 == 1 and (not CurrentTrack or CurrentTrack:currentTime() >= CurrentTrack:duration() - 1) then -- Prepare playing new track
+    if UpdateCounter%60 == 1 and (not CurrentTrack or CurrentTrack:currentTime() >= CurrentTrack:duration() - 1) and ConfigMaxVolume > 0 and EnableMusic then -- Prepare playing new track
         updateRaceStatusData()
         CurrentTrack = ui.MediaPlayer(getNewTrack())
         TargetVolume = MaxVolume
@@ -295,4 +310,118 @@ function script.update(dt)
         end
     end
 
+end
+
+function script.windowMain()
+    ui.setNextWindowSize({x=100, y=100})
+    local needToSave = false
+    local checkbox
+
+    local checkbox = ui.checkbox("Enable Music", EnableMusic)
+    if checkbox then
+        EnableMusic = not EnableMusic
+        ConfigFile:set("settings", "appenabled", EnableMusic)
+        needToSave = true
+    end
+
+    ui.separator()
+    ui.text("VOLUME")
+    ui.separator()
+
+    ui.text('Maximum Music Volume (Relative to Master volume)')
+    local sliderValue1 = ConfigMaxVolume
+    sliderValue1 = ui.slider("(Default 0.833) ##slider1", sliderValue1, 0, 1)
+    if ConfigMaxVolume ~= sliderValue1 then
+        ConfigMaxVolume = sliderValue1
+        ConfigFile:set("settings", "volume", sliderValue1)
+        needToSave = true
+    end
+    ui.separator()
+    ui.text('Minimum Music Volume (For dynamic adjustments)')
+    ui.text('#Percentage of Maximum Volume, not an absolute value.')
+    local sliderValue2 = ConfigMinTargetVolumeMultiplier
+    sliderValue2 = ui.slider("(Default 0.4) ##slider2", sliderValue2, 0, 1)
+    if ConfigMinTargetVolumeMultiplier ~= sliderValue2 then
+        ConfigMinTargetVolumeMultiplier = sliderValue2
+        ConfigFile:set("settings", "minvolume", sliderValue2)
+        needToSave = true
+    end
+    ui.separator()
+    ui.text("FADE TRANSITIONS")
+    ui.separator()
+
+    ui.text('Fade-In Speed Multiplier')
+    local sliderValue3 = ConfigFile:get("settings", "fadein", 1)
+    sliderValue3 = ui.slider("(Default 1) ##slider3", sliderValue3, 0.25, 10)
+    if ConfigFadeInSpeed ~= sliderValue3 then
+        ConfigFadeInSpeed = sliderValue3
+        ConfigFile:set("settings", "fadein", sliderValue3)
+        needToSave = true
+    end
+    ui.separator()
+    ui.text('Fade-Out Speed Multiplier')
+    local sliderValue4 = ConfigFile:get("settings", "fadeout", 5)
+    sliderValue4 = ui.slider("(Default 5) ##slider4", sliderValue4, 0.25, 10)
+    if ConfigFadeOutSpeed ~= sliderValue4 then
+        ConfigFadeOutSpeed = sliderValue4
+        ConfigFile:set("settings", "fadeout", sliderValue4)
+        needToSave = true
+    end
+    ui.separator()
+    ui.text("SESSIONS")
+    ui.separator()
+
+    local checkbox = ui.checkbox("Enable Practice Playlist (If disabled, using race music)", EnablePracticePlaylist)
+    if checkbox then
+        EnablePracticePlaylist = not EnablePracticePlaylist
+        ConfigFile:set("settings", "practiceenabled", EnablePracticePlaylist)
+        needToSave = true
+    end
+
+    local checkbox = ui.checkbox("Enable Qualifying Playlist (If disabled, using race music)", EnableQualifyingPlaylist)
+    if checkbox then
+        EnableQualifyingPlaylist = not EnableQualifyingPlaylist
+        ConfigFile:set("settings", "qualifyingenabled", EnableQualifyingPlaylist)
+        needToSave = true
+    end
+
+    local checkbox = ui.checkbox("Play Victory Music if finished in Top25%", PodiumFinishTop25Percent)
+    if checkbox then
+        PodiumFinishTop25Percent = not PodiumFinishTop25Percent
+        ConfigFile:set("settings", "podiumtop25", PodiumFinishTop25Percent)
+        needToSave = true
+    end
+
+    ui.separator()
+    ui.text("DYNAMIC VOLUME FADEOUT")
+    ui.separator()
+
+    local checkbox = ui.checkbox("Enable caution flag volume fadeout", EnableDynamicCautionVolume)
+    if checkbox then
+        EnableDynamicCautionVolume = not EnableDynamicCautionVolume
+        ConfigFile:set("settings", "cautionfadeout", EnableDynamicCautionVolume)
+        needToSave = true
+    end
+
+    local checkbox = ui.checkbox("Enable opponent proximity volume fadeout", EnableDynamicProximityVolume)
+    if checkbox then
+        EnableDynamicProximityVolume = not EnableDynamicProximityVolume
+        ConfigFile:set("settings", "proximityfadeout", EnableDynamicProximityVolume)
+        needToSave = true
+    end
+
+    local checkbox = ui.checkbox("Enable low speed volume fadeout", EnableDynamicSpeedVolume)
+    if checkbox then
+        EnableDynamicSpeedVolume = not EnableDynamicSpeedVolume
+        ConfigFile:set("settings", "speedfadeout", EnableDynamicSpeedVolume)
+        needToSave = true
+    end
+
+    ui.separator()
+    ui.text("")
+    ui.separator()
+
+    if needToSave then
+        ConfigFile:save()
+    end
 end
