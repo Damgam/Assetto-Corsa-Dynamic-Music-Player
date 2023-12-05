@@ -72,8 +72,8 @@ function updateConfig()
     local MasterVolume = ac.getAudioVolume('main')
     MaxVolume = ConfigMaxVolume * MasterVolume
     MinTargetVolumeMultiplier = ConfigMinTargetVolumeMultiplier
-    FadeInSpeed = 0.00333 * ConfigFadeInSpeed * MasterVolume * MaxVolume
-    FadeOutSpeed = 0.00333 * ConfigFadeOutSpeed * MasterVolume * MaxVolume
+    FadeInSpeed = 0.005 * ConfigFadeInSpeed * MasterVolume * MaxVolume
+    FadeOutSpeed = 0.005 * ConfigFadeOutSpeed * MasterVolume * MaxVolume
 end
 updateConfig()
 
