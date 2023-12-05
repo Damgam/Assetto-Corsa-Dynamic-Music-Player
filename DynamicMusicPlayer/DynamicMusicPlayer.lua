@@ -202,7 +202,7 @@ function updateRaceStatusData()
     (MusicType  == "waiting" and PlayerCarSpeed >= 1) or -- Idle Music is playing but we're moving
     (MusicType  ~= "waiting" and PlayerCarSpeed < 1 and IdleTimer > 10 and MusicType  ~= "finish") or -- We're Idle but non-idle music is playing, just make sure it's not playing finish music.
     (MusicType  == "practice" and Session.type ~= 1) or -- Practice music is playing but we're not in practice
-    (MusicType  == "quali" and (Session.type ~= 2 or Session.type ~= 4 or Session.type ~= 5)) or -- Qualification music is playing but we're not in qualis
+    (MusicType  == "quali" and Session.type ~= 2) or -- Qualification music is playing but we're not in qualis
     ((MusicType == "lowintensity" or MusicType == "highintensity") and Session.type ~= 3) or -- Race music is playing but we're not in race
     (MusicType  == "lowintensity" and IntensityLevel > HighIntensityThreshold*1.1) or -- Low intensity music is playing but it should be playing high instead
     (MusicType  == "highintensity" and IntensityLevel < HighIntensityThreshold*0.9) or -- High intensity music is playing but it should be playing low instead
@@ -265,7 +265,7 @@ function getNewTrack()
             testFilePath = PracticeMusic[math.random(1,#PracticeMusic)][2]
             MusicType = "practice"
 
-        elseif (EnableQualifyingPlaylist and (Session.type == 2 or Session.type == 4 or Session.type == 5)) then
+        elseif (EnableQualifyingPlaylist and Session.type == 2) then
 
             testFilePath = QualificationMusic[math.random(1,#QualificationMusic)][2]
             MusicType = "quali"
