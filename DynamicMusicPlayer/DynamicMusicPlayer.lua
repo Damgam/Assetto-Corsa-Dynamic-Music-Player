@@ -313,11 +313,10 @@ function script.update(dt)
 end
 
 function script.windowMain()
-    ui.setNextWindowSize({x=100, y=100})
     local needToSave = false
     local checkbox
 
-    local checkbox = ui.checkbox("Enable Music", EnableMusic)
+    checkbox = ui.checkbox("Enable Music", EnableMusic)
     if checkbox then
         EnableMusic = not EnableMusic
         ConfigFile:set("settings", "appenabled", EnableMusic)
@@ -371,21 +370,21 @@ function script.windowMain()
     ui.text("SESSIONS")
     ui.separator()
 
-    local checkbox = ui.checkbox("Enable Practice Playlist (If disabled, using race music)", EnablePracticePlaylist)
+    checkbox = ui.checkbox("Enable Practice Playlist (If disabled, using race music)", EnablePracticePlaylist)
     if checkbox then
         EnablePracticePlaylist = not EnablePracticePlaylist
         ConfigFile:set("settings", "practiceenabled", EnablePracticePlaylist)
         needToSave = true
     end
 
-    local checkbox = ui.checkbox("Enable Qualifying Playlist (If disabled, using race music)", EnableQualifyingPlaylist)
+    checkbox = ui.checkbox("Enable Qualifying Playlist (If disabled, using race music)", EnableQualifyingPlaylist)
     if checkbox then
         EnableQualifyingPlaylist = not EnableQualifyingPlaylist
         ConfigFile:set("settings", "qualifyingenabled", EnableQualifyingPlaylist)
         needToSave = true
     end
 
-    local checkbox = ui.checkbox("Play Victory Music if finished in Top25%", PodiumFinishTop25Percent)
+    checkbox = ui.checkbox("Play Victory Music if finished in Top25%", PodiumFinishTop25Percent)
     if checkbox then
         PodiumFinishTop25Percent = not PodiumFinishTop25Percent
         ConfigFile:set("settings", "podiumtop25", PodiumFinishTop25Percent)
@@ -396,21 +395,21 @@ function script.windowMain()
     ui.text("DYNAMIC VOLUME FADEOUT")
     ui.separator()
 
-    local checkbox = ui.checkbox("Enable caution flag volume fadeout", EnableDynamicCautionVolume)
+    checkbox = ui.checkbox("Enable caution flag volume fadeout", EnableDynamicCautionVolume)
     if checkbox then
         EnableDynamicCautionVolume = not EnableDynamicCautionVolume
         ConfigFile:set("settings", "cautionfadeout", EnableDynamicCautionVolume)
         needToSave = true
     end
 
-    local checkbox = ui.checkbox("Enable opponent proximity volume fadeout", EnableDynamicProximityVolume)
+    checkbox = ui.checkbox("Enable opponent proximity volume fadeout", EnableDynamicProximityVolume)
     if checkbox then
         EnableDynamicProximityVolume = not EnableDynamicProximityVolume
         ConfigFile:set("settings", "proximityfadeout", EnableDynamicProximityVolume)
         needToSave = true
     end
 
-    local checkbox = ui.checkbox("Enable low speed volume fadeout", EnableDynamicSpeedVolume)
+    checkbox = ui.checkbox("Enable low speed volume fadeout", EnableDynamicSpeedVolume)
     if checkbox then
         EnableDynamicSpeedVolume = not EnableDynamicSpeedVolume
         ConfigFile:set("settings", "speedfadeout", EnableDynamicSpeedVolume)
