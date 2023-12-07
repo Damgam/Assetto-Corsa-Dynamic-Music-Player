@@ -9,6 +9,9 @@ ConfigHighIntensityThreshold = ConfigFile:get("settings", "highintensitythreshol
 
 EnablePracticePlaylist = ConfigFile:get("settings", "practiceenabled", true) -- Enable Practice mode playlist, otherwise use Race music
 EnableQualifyingPlaylist = ConfigFile:get("settings", "qualifyingenabled", true) -- Enable Qualification mode playlist, otherwise use Race music
+EnableIdlePlaylist = ConfigFile:get("settings", "idleenabled", true) -- Enable Waiting mode playlist
+EnableFinishPlaylist = ConfigFile:get("settings", "finishenabled", true) -- Enable Finish mode playlist
+EnableReplayPlaylist = ConfigFile:get("settings", "replayenabled", true) -- Enable Replay mode playlist
 PodiumFinishTop25Percent = ConfigFile:get("settings", "podiumtop25", true) -- if true, podium music plays if you end up in top 25%, if false, plays when you end up in the podium. // Apparently Finish music is broken in Online, yay!
 
 ConfigMaxVolume = ConfigFile:get("settings", "volume", 0.8333) -- Volume relative to ingame Master volume value, percentage.
@@ -91,13 +94,13 @@ function updateRaceStatusData()
     PlayerCarRacePosition = Car.racePosition
     PlayerCarSpeed = Car.speedKmh
 
-    if PlayerCarSpeed <= 1 then
+    if PlayerCarSpeed <= 1 and EnableIdlePlaylist then
         IdleTimer = IdleTimer + 1
     else
         IdleTimer = 0
     end
 
-    if Sim.raceSessionType == 3 and Sim.raceFlagType == 13 then -- finish flag, maybe this one will work reliably in online, lol.
+    if Sim.raceSessionType == 3 and Sim.raceFlagType == 13 and EnableFinishPlaylist then -- finish flag, maybe this one will work reliably in online, lol.
         PlayerFinished = true
     else
         PlayerFinished = false
@@ -205,7 +208,7 @@ function updateRaceStatusData()
 
     if MusicType and (
     (MusicType  == "replay" and (not Sim.isReplayActive)) or -- We're not in replay but replay music is playing
-    (MusicType  ~= "replay" and Sim.isReplayActive) or -- We're in replay but replay music is not playing
+    (MusicType  ~= "replay" and Sim.isReplayActive and EnableReplayPlaylist) or -- We're in replay but replay music is not playing
     (MusicType  == "waiting" and PlayerCarSpeed >= 1) or -- Idle Music is playing but we're moving
     (MusicType  ~= "waiting" and PlayerCarSpeed < 1 and IdleTimer > 10 and MusicType  ~= "finish") or -- We're Idle but non-idle music is playing, just make sure it's not playing finish music.
     (MusicType  == "practice" and Session.type ~= 1) or -- Practice music is playing but we're not in practice
@@ -248,7 +251,7 @@ function getNewTrack()
     local testFilePath
 
     repeat
-        if Sim.isReplayActive then
+        if Sim.isReplayActive and EnableReplayPlaylist then
 
             testFilePath = ReplayMusic[math.random(1,#ReplayMusic)][2]
             MusicType = "replay"
@@ -262,7 +265,7 @@ function getNewTrack()
             end
             MusicType = "finish"
 
-        elseif PlayerCarSpeed <= 1 then
+        elseif PlayerCarSpeed <= 1 and EnableIdlePlaylist then
 
             testFilePath = WaitingMusic[math.random(1,#WaitingMusic)][2]
             MusicType = "waiting"
@@ -453,6 +456,27 @@ function script.windowMain()
     if checkbox then
         EnableQualifyingPlaylist = not EnableQualifyingPlaylist
         ConfigFile:set("settings", "qualifyingenabled", EnableQualifyingPlaylist)
+        needToSave = true
+    end
+
+    checkbox = ui.checkbox("Enable Idle mode playlist", EnableIdlePlaylist)
+    if checkbox then
+        EnableIdlePlaylist = not EnableIdlePlaylist
+        ConfigFile:set("settings", "idleenabled", EnableIdlePlaylist)
+        needToSave = true
+    end
+
+    checkbox = ui.checkbox("Enable Replay mode playlist", EnableReplayPlaylist)
+    if checkbox then
+        EnableReplayPlaylist = not EnableReplayPlaylist
+        ConfigFile:set("settings", "replayenabled", EnableReplayPlaylist)
+        needToSave = true
+    end
+
+    checkbox = ui.checkbox("Enable Finish playlists", EnableFinishPlaylist)
+    if checkbox then
+        EnableFinishPlaylist = not EnableFinishPlaylist
+        ConfigFile:set("settings", "finishenabled", EnableFinishPlaylist)
         needToSave = true
     end
 
