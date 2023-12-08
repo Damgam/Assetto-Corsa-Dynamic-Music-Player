@@ -6,6 +6,7 @@ ConfigFile = ac.INIConfig.load(ac.getFolder(ac.FolderID.ACApps) .. "/lua/Dynamic
 EnableMusic = ConfigFile:get("settings", "appenabled", 1)
 
 ConfigHighIntensityThreshold = ConfigFile:get("settings", "highintensitythreshold", 0.60) -- Low and High Intensity switch level. Scale 0 to 1
+--ConfigPauseMusicOnGamePaused = ConfigFile:get("settings", "pauseongamepause", false) -- Completely pause music when game is paused -- Broken, CurrentTrack:isPaused() doesn't exist for some reason
 
 EnablePracticePlaylist = ConfigFile:get("settings", "practiceenabled", true) -- Enable Practice mode playlist, otherwise use Race music
 EnableQualifyingPlaylist = ConfigFile:get("settings", "qualifyingenabled", true) -- Enable Qualification mode playlist, otherwise use Race music
@@ -207,10 +208,10 @@ function updateRaceStatusData()
     end
 
     if MusicType and (
-    (MusicType  == "replay" and (not Sim.isReplayActive)) or -- We're not in replay but replay music is playing
+    (MusicType  == "replay" and (not Sim.isReplayActive) and EnableReplayPlaylist) or -- We're not in replay but replay music is playing
     (MusicType  ~= "replay" and Sim.isReplayActive and EnableReplayPlaylist) or -- We're in replay but replay music is not playing
     (MusicType  == "waiting" and PlayerCarSpeed >= 1) or -- Idle Music is playing but we're moving
-    (MusicType  ~= "waiting" and PlayerCarSpeed < 1 and IdleTimer > 10 and MusicType  ~= "finish") or -- We're Idle but non-idle music is playing, just make sure it's not playing finish music.
+    (MusicType  ~= "waiting" and PlayerCarSpeed < 1 and IdleTimer > 10 and MusicType  ~= "finish" and MusicType  ~= "replay") or -- We're Idle but non-idle music is playing, just make sure it's not playing finish music.
     (MusicType  == "practice" and Session.type ~= 1) or -- Practice music is playing but we're not in practice
     (MusicType  == "quali" and Session.type ~= 2) or -- Qualification music is playing but we're not in qualis
     ((MusicType == "lowintensity" or MusicType == "highintensity") and Session.type ~= 3) or -- Race music is playing but we're not in race
@@ -321,6 +322,16 @@ UpdateCounter = 0
 function script.update(dt)
     UpdateCounter = UpdateCounter+1
 
+    --[[ -- Broken, CurrentTrack:isPaused() doesn't exist for some reason
+        if ConfigPauseMusicOnGamePaused then
+            local gameIsPaused = ac.getSim().isPaused
+            if CurrentTrack and ConfigPauseMusicOnGamePaused and gameIsPaused and (not CurrentTrack:isPaused()) then
+                CurrentTrack:pause()
+            elseif CurrentTrack and (not gameIsPaused) and CurrentTrack:isPaused() then
+                CurrentTrack:play()
+            end
+        end
+    ]]
     if UpdateCounter%60 == 0 then -- Script Updates
         updateConfig()
         updateRaceStatusData()
@@ -342,7 +353,11 @@ function script.update(dt)
 
     if UpdateCounter%5 == 1 then
         if CurrentTrack and CurrentVolume >= (TargetVolume*TargetVolumeMultiplier) + math.min(FadeInSpeed, FadeOutSpeed) then
-            CurrentVolume = CurrentVolume - (FadeOutSpeed*FadeOutSpeedMultiplier)
+            if ConfigFadeOutSpeed < 3 then
+                CurrentVolume = CurrentVolume - (FadeOutSpeed*FadeOutSpeedMultiplier)
+            else
+                CurrentVolume = (TargetVolume*TargetVolumeMultiplier)
+            end
             CurrentTrack:setVolume(CurrentVolume)
             if CurrentVolume <= 0 and TargetVolume < 0 then
                 CurrentTrack:setVolume(0)
@@ -350,7 +365,11 @@ function script.update(dt)
                 CurrentVolume = 0
             end
         elseif CurrentTrack and CurrentVolume <= (TargetVolume*TargetVolumeMultiplier) - math.min(FadeInSpeed, FadeOutSpeed) then
-            CurrentVolume = CurrentVolume + (FadeInSpeed*FadeInSpeedMultiplier)
+            if ConfigFadeInSpeed < 3 then
+                CurrentVolume = CurrentVolume + (FadeInSpeed*FadeInSpeedMultiplier)
+            else
+                CurrentVolume = (TargetVolume*TargetVolumeMultiplier)
+            end
             CurrentTrack:setVolume(CurrentVolume)
         end
     end
@@ -413,7 +432,17 @@ function script.windowMain()
     end
     ui.text('?The app is adjusting current volume based on a few events.')
     ui.text('  This value defines how low the volume can drop relative to Max.')
-
+    
+    --[[ -- Broken, CurrentTrack:isPaused() doesn't exist for some reason
+    ui.separator()
+    checkbox = ui.checkbox("Pause music when game is paused", ConfigPauseMusicOnGamePaused)
+    if checkbox then
+        ConfigPauseMusicOnGamePaused = not ConfigPauseMusicOnGamePaused
+        ConfigFile:set("settings", "pauseongamepause", ConfigPauseMusicOnGamePaused)
+        needToSave = true
+    end
+    ui.text('?If disabled, music volume turns very low when paused.')
+    ]]
     ui.separator()
     ui.text("FADE TRANSITIONS")
     ui.separator()
@@ -421,25 +450,25 @@ function script.windowMain()
     ui.text('Fade-In Speed Multiplier')
 
     local sliderValue4 = ConfigFile:get("settings", "fadein", 1)
-    sliderValue4 = ui.slider("(Default 1) ##slider4", sliderValue4, 0.25, 10)
+    sliderValue4 = ui.slider("(Default 1) ##slider4", sliderValue4, 0.25, 3)
     if ConfigFadeInSpeed ~= sliderValue4 then
         ConfigFadeInSpeed = sliderValue4
         ConfigFile:set("settings", "fadein", sliderValue4)
         needToSave = true
     end
-    ui.text('?Higher is faster.')
+    ui.text('?Higher is faster. Completely disables fade-ins when maxed.')
 
     ui.separator()
     ui.text('Fade-Out Speed Multiplier')
     
     local sliderValue5 = ConfigFile:get("settings", "fadeout", 1)
-    sliderValue5 = ui.slider("(Default 1) ##slider5", sliderValue5, 0.25, 10)
+    sliderValue5 = ui.slider("(Default 1) ##slider5", sliderValue5, 0.25, 3)
     if ConfigFadeOutSpeed ~= sliderValue5 then
         ConfigFadeOutSpeed = sliderValue5
         ConfigFile:set("settings", "fadeout", sliderValue5)
         needToSave = true
     end
-    ui.text('?Higher is faster.')
+    ui.text('?Higher is faster. Completely disables fade-outs when maxed.')
 
     ui.separator()
     ui.text("SESSIONS")
