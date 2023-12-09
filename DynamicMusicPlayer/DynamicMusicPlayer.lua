@@ -1,3 +1,5 @@
+---@ext:verbose
+CSPBuild = ac.getPatchVersionCode()
 math.randomseed(os.preciseClock())
 
 function table.shuffle(sequence, firstIndex) -- because i'm not sure if it exists.
@@ -193,7 +195,7 @@ function updateRaceStatusData()
     end
     
     if (not Session.isTimedRace) and Session.type == 3 then
-        if not Sim.isOnlineRace then -- Positioning is broken online right now so only use lap count
+        if (not Sim.isOnlineRace) or CSPBuild >= 2715 then -- Positioning is broken online right now so only use lap count -- Fixed in CSP 0.2.1 Preview56
             IntensityLevel = (PositionIntensity+LapIntensity)/2
         else
             IntensityLevel = LapIntensity
@@ -207,7 +209,7 @@ function updateRaceStatusData()
             TargetVolumeMultiplier = math.min(TargetVolumeMultiplier + TargetVolumeMultiplier*0.10, 1)
         end
     else
-        if not Sim.isOnlineRace then -- Positioning is broken online right now so only use timer
+        if (not Sim.isOnlineRace) or CSPBuild >= 2715 then -- Positioning is broken online right now so only use timer -- Fixed in CSP 0.2.1 Preview56
             --ac.log("posint", PositionIntensity)
             --ac.log("time", TimeIntensity)
             IntensityLevel = (PositionIntensity+TimeIntensity)/2
@@ -223,8 +225,8 @@ function updateRaceStatusData()
             TargetVolumeMultiplier = math.min(TargetVolumeMultiplier + TargetVolumeMultiplier*0.10, 1)
         end
     end
-
-    if not Sim.isOnlineRace then-- Positions are currently broken in online so lets only use this feature in offline for now
+    
+    if (not Sim.isOnlineRace) or CSPBuild >= 2715 then-- Positions are currently broken in online so lets only use this feature in offline for now -- Fixed in CSP 0.2.1 Preview56
         if PlayerCarRacePosition == 1 then -- boost the volume a little when player is doing well
             TargetVolumeMultiplier = math.min(TargetVolumeMultiplier + TargetVolumeMultiplier*0.20, 1)
         elseif PlayerCarRacePosition <= 3 then
