@@ -1,4 +1,4 @@
----@ext:verbose
+---@ext
 CSPBuild = ac.getPatchVersionCode()
 math.randomseed(os.preciseClock())
 
