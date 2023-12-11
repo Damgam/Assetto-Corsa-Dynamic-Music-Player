@@ -6,7 +6,9 @@ Music Player that reacts to what's happening on the track, controlling music pla
 MUSIC IS NOT INCLUDED WITH THE APP, FILL IT WITH YOUR OWN FILES. MP3 AND OGG CONFIRMED TO WORK, WHATEVER ELSE IS SUPPORTED BY ASSETTO CORSA CSP WILL ALSO WORK.
 
 Download: 
+
 https://github.com/Damgam/Assetto-Corsa-Dynamic-Music-Player/releases
+
 https://www.racedepartment.com/downloads/dynamic-music-player.65459/
 
 Install: Drop the DynamicMusicPlayer folder into assettocorsa\apps\lua\
