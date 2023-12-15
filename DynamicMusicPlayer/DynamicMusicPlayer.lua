@@ -236,7 +236,7 @@ function updateRaceStatusData()
     
     if (not Session.isTimedRace) and Session.type == 3 then
         if (not Sim.isOnlineRace) or CSPBuild >= 2715 then -- Positioning is broken online right now so only use lap count -- Fixed in CSP 0.2.1 Preview56
-            IntensityLevel = math.min(1, (((3*PositionIntensity)+LapIntensity+AverageSpeedIntensity+TopSpeedIntensity)/6) + IntensityBooster)
+            IntensityLevel = math.min(1, ((PositionIntensity+LapIntensity+AverageSpeedIntensity+TopSpeedIntensity)/4) + IntensityBooster)
         else
             IntensityLevel = (LapIntensity+AverageSpeedIntensity+TopSpeedIntensity)/3
         end
@@ -252,7 +252,7 @@ function updateRaceStatusData()
         if (not Sim.isOnlineRace) or CSPBuild >= 2715 then -- Positioning is broken online right now so only use timer -- Fixed in CSP 0.2.1 Preview56
             --ac.log("posint", PositionIntensity)
             --ac.log("time", TimeIntensity)
-            IntensityLevel = math.min(1, (((3*PositionIntensity)+TimeIntensity+AverageSpeedIntensity+TopSpeedIntensity)/6) + IntensityBooster)
+            IntensityLevel = math.min(1, ((PositionIntensity+TimeIntensity+AverageSpeedIntensity+TopSpeedIntensity)/4) + IntensityBooster)
         else
             IntensityLevel = (TimeIntensity+AverageSpeedIntensity+TopSpeedIntensity)/3
         end

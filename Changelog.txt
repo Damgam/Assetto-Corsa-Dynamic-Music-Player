@@ -1,3 +1,6 @@
+0.8.1
+- I forgot to revert something i've tried and wasn't happy about, oops.
+
 0.8
 - Waiting/Idle music is now kicked in as soon as you're in pit stop area, even if you are moving,
 - Waiting/Idle music now always plays at maximum volume,
