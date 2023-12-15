@@ -1,0 +1,34 @@
+0.8
+- Waiting/Idle music is now kicked in as soon as you're in pit stop area, even if you are moving,
+- Waiting/Idle music now always plays at maximum volume,
+- Intensity Level now has 2 new variables that affect it. Average Speed and Top Speed. This makes it so fast races will play high intensity music much earlier than slow races. Slow race might never get into High Intensity if you're not close to the top of the pack. Average Speed scales between 100 and 250 km/h, and Top Speed scales between 150 and 300 km/h,
+- Intensity level is now boosted when you're near the top of the pack, starting with position 5 and getting more significant up to position 1 where intensity is forced to be 100%,
+- Only use "doing good" volume boosters in races instead of everywhere,
+- Music now switches to next track on any kind of session change or restart, even if playlist doesn't change,
+- Start music sequence is back and better than ever. 10 seconds before green light all music will fade away, The moment green lits up, music kicks in at full volume, and stays there for 10 seconds before adjusting to the environment,
+- Finish music now plays only once after finishing the race instead of looping until you quit or restart,
+- Proximity detection now ignores cars in pits.
+
+0.7.1
+- Re-enabled position based features for online mode when Custom Shaders Patch is at least at version 0.2.1 Preview56 where Lua calls for positions online got fixed. Thanks x4fab/Ilja :)
+- Enabled LuaPreprocessor for extra optimisations.
+
+0.7
+- Added new volume fadeout event - crashing. Volume drops when you hit something, be it another car or a wall, and severity of the crash defines how badly the volume is gonna drop. Took a few bits of code from Tunnel Vision filter from CSP to calculate severity of the hit,
+- Turned track picking from random to shuffled sequential to deal with repetition for good without hacky solutions,
+- App no longer crashes when you drop only one track into the folder. You still need to have at least one though,
+- Re-organised the settings menu to show all the more basic settings at the top and advanced ones below them,
+- Replaced placeholder silence files with voice messages telling you that you forgot about something ;).
+
+0.6.1
+- Fixed replay music instantly fading out in some circumstances.
+- Reduced range of fade speed options as too high causes problems.
+- When fade speed option is set to max, completely disables fades and cuts straight to desired values.
+
+0.6 - Last update before proper release
+- Added more detailed descriptions to some options
+- Added option to adjust High Intensity threshold.
+- Added option to turn off Idle music
+- Added option to turn off Finish music
+- Added playlist fallback for Other session types, using mix of all the other enabled playlists.
+
