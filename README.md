@@ -28,9 +28,10 @@ Todo:
 
 Known Issues:
 - Each playlist needs to have at least 1 file to not crash the app. You can turn off playlists you don't want in the settings app, just keep something in there. Each playlist has one placeholder file included.
-- (Partially Fixed in Custom Shaders Patch 0.2.1 Preview56) Due to Lua API call for leaderboards being broken, online mode does not use features related to your position in the race. Intensity levels are purely race progression based,
+- (Fixed in Custom Shaders Patch 0.2.1 Preview56) Due to Lua API call for leaderboards being broken, online mode does not use features related to your position in the race. Intensity levels are purely race progression based,
 - For the same reason, finish music will certainly be wrong in Online. It will work, but it will use your bugged position to determine if it should play podium music or lose music,
 - Default volume balancing might be a bit too wild for some.
+- (Fixed in Custom Shaders Patch 0.2.1 Preview65) OGG files might crash the game on latest Windows 10 versions (they do that to me).
 
 Presentation Video:
 
