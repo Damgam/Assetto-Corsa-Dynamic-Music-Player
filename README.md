@@ -34,4 +34,4 @@ Known Issues:
 
 Presentation Video:
 
-[![Assetto Corsa WiP Dynamic Music Player Mod Teaser/Presentation](http://img.youtube.com/vi/FhkFGFNKvd0/0.jpg)](http://www.youtube.com/watch?v=FhkFGFNKvd0 "Assetto Corsa WiP Dynamic Music Player Mod Teaser/Presentation")
+[![Dynamic Music Player - LFM Online Race Gameplay](http://img.youtube.com/vi/2Wdc66L4adw/0.jpg)](http://www.youtube.com/watch?v=2Wdc66L4adw/ "Dynamic Music Player - LFM Online Race Gameplay")
