@@ -10,6 +10,12 @@ function table.shuffle(sequence, firstIndex) -- because i'm not sure if it exist
     end
 end
 
+function table_append(appendTarget, appendData)
+    for _, value in pairs(appendData) do
+        table.insert(appendTarget, value)
+    end
+end
+
 ConfigFile = ac.INIConfig.load(ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/" .. "settings.ini")
 
 -- Config
@@ -36,43 +42,93 @@ EnableDynamicProximityVolume = ConfigFile:get("settings", "proximityfadeout", tr
 EnableDynamicSpeedVolume = ConfigFile:get("settings", "speedfadeout", true) -- turn down music volume depending on speed of your car
 EnableDynamicCrashingVolume = ConfigFile:get("settings", "crashingfadeout", true) -- turn down music volume when you crash
 
+ExternalMusic = require('Music/ExternalMusicPaths')
+
 LowDir = '/Music/LowIntensity'
 LowMusic = table.map(io.scanDir( __dirname .. LowDir, '*'), function (x) return { string.sub(x, 1, #x - 4), LowDir .. '/' .. x } end)
+if ExternalMusic and ExternalMusic.LowIntensity and ExternalMusic.LowIntensity[1] then
+    for i = 1,#ExternalMusic.LowIntensity do
+        local table = table.map(io.scanDir( ExternalMusic.LowIntensity[i], '*'), function (x) return { string.sub(x, 1, #x - 4), ExternalMusic.LowIntensity[i] .. '/' .. x } end)
+        table_append(LowMusic, table)
+    end
+end
 LowMusicCounter = 0
 table.shuffle(LowMusic)
 
 HighDir = '/Music/HighIntensity'
 HighMusic = table.map(io.scanDir( __dirname .. HighDir, '*'), function (x) return { string.sub(x, 1, #x - 4), HighDir .. '/' .. x } end)
+if ExternalMusic and ExternalMusic.HighIntensity and ExternalMusic.HighIntensity[1] then
+    for i = 1,#ExternalMusic.HighIntensity do
+        local table = table.map(io.scanDir( ExternalMusic.HighIntensity[i], '*'), function (x) return { string.sub(x, 1, #x - 4), ExternalMusic.HighIntensity[i] .. '/' .. x } end)
+        table_append(HighMusic, table)
+    end
+end
 HighMusicCounter = 0
 table.shuffle(HighMusic)
 
 FinishDir = '/Music/FinishLose'
 FinishMusic = table.map(io.scanDir( __dirname .. FinishDir, '*'), function (x) return { string.sub(x, 1, #x - 4), FinishDir .. '/' .. x } end)
+if ExternalMusic and ExternalMusic.FinishLose and ExternalMusic.FinishLose[1] then
+    for i = 1,#ExternalMusic.FinishLose do
+        local table = table.map(io.scanDir( ExternalMusic.FinishLose[i], '*'), function (x) return { string.sub(x, 1, #x - 4), ExternalMusic.FinishLose[i] .. '/' .. x } end)
+        table_append(FinishMusic, table)
+    end
+end
 FinishMusicCounter = 0
 table.shuffle(FinishMusic)
 
 FinishPodiumDir = '/Music/FinishPodium'
 FinishPodiumMusic = table.map(io.scanDir( __dirname .. FinishPodiumDir, '*'), function (x) return { string.sub(x, 1, #x - 4), FinishPodiumDir .. '/' .. x } end)
+if ExternalMusic and ExternalMusic.FinishPodium and ExternalMusic.FinishPodium[1] then
+    for i = 1,#ExternalMusic.FinishPodium do
+        local table = table.map(io.scanDir( ExternalMusic.FinishPodium[i], '*'), function (x) return { string.sub(x, 1, #x - 4), ExternalMusic.FinishPodium[i] .. '/' .. x } end)
+        table_append(FinishPodiumMusic, table)
+    end
+end
 FinishPodiumMusicCounter = 0
 table.shuffle(FinishPodiumMusic)
 
 ReplayDir = '/Music/Replay'
 ReplayMusic = table.map(io.scanDir( __dirname .. ReplayDir, '*'), function (x) return { string.sub(x, 1, #x - 4), ReplayDir .. '/' .. x } end)
+if ExternalMusic and ExternalMusic.Replay and ExternalMusic.Replay[1] then
+    for i = 1,#ExternalMusic.Replay do
+        local table = table.map(io.scanDir( ExternalMusic.Replay[i], '*'), function (x) return { string.sub(x, 1, #x - 4), ExternalMusic.Replay[i] .. '/' .. x } end)
+        table_append(ReplayMusic, table)
+    end
+end
 ReplayMusicCounter = 0
 table.shuffle(ReplayMusic)
 
 PracticeDir = '/Music/Practice'
 PracticeMusic = table.map(io.scanDir( __dirname .. PracticeDir, '*'), function (x) return { string.sub(x, 1, #x - 4), PracticeDir .. '/' .. x } end)
+if ExternalMusic and ExternalMusic.Practice and ExternalMusic.Practice[1] then
+    for i = 1,#ExternalMusic.Practice do
+        local table = table.map(io.scanDir( ExternalMusic.Practice[i], '*'), function (x) return { string.sub(x, 1, #x - 4), ExternalMusic.Practice[i] .. '/' .. x } end)
+        table_append(PracticeMusic, table)
+    end
+end
 PracticeMusicCounter = 0
 table.shuffle(PracticeMusic)
 
 QualificationDir = '/Music/Qualifying'
 QualificationMusic = table.map(io.scanDir( __dirname .. QualificationDir, '*'), function (x) return { string.sub(x, 1, #x - 4), QualificationDir .. '/' .. x } end)
+if ExternalMusic and ExternalMusic.Qualification and ExternalMusic.Qualification[1] then
+    for i = 1,#ExternalMusic.Qualification do
+        local table = table.map(io.scanDir( ExternalMusic.Qualification[i], '*'), function (x) return { string.sub(x, 1, #x - 4), ExternalMusic.Qualification[i] .. '/' .. x } end)
+        table_append(QualificationMusic, table)
+    end
+end
 QualificationMusicCounter = 0
 table.shuffle(QualificationMusic)
 
 WaitingDir = '/Music/Waiting'
 WaitingMusic = table.map(io.scanDir( __dirname .. WaitingDir, '*'), function (x) return { string.sub(x, 1, #x - 4), WaitingDir .. '/' .. x } end)
+if ExternalMusic and ExternalMusic.Waiting and ExternalMusic.Waiting[1] then
+    for i = 1,#ExternalMusic.Waiting do
+        local table = table.map(io.scanDir( ExternalMusic.Waiting[i], '*'), function (x) return { string.sub(x, 1, #x - 4), ExternalMusic.Waiting[i] .. '/' .. x } end)
+        table_append(WaitingMusic, table)
+    end
+end
 WaitingMusicCounter = 0
 table.shuffle(WaitingMusic)
 
@@ -158,7 +214,6 @@ function updateRaceStatusData()
         SessionSwitched = true
     end
     previousSessionStartTimer = Sim.timeToSessionStart
-    ac.log("previousSessionStartTimer", previousSessionStartTimer)
     IntensityBooster = 0
     if CarsInRace > 1 then
         PositionIntensity = (-((PlayerCarRacePosition - 1)/(CarsInRace - 1)))+1
@@ -541,97 +596,23 @@ function script.update(dt)
 
 end
 
-function script.windowMain()
-    local needToSave = false
-    local checkbox
+function TabsFunction()
+    ui.tabItem("Volume", {}, VolumeTab)
+    ui.tabItem("Sessions", {}, SessionsTab)
+    ui.tabItem("Behaviour", {}, BehaviourTab)
+    ui.tabItem("Keybinds", {}, KeybindsTab)
+end
 
-    checkbox = ui.checkbox("Enable Music", EnableMusic)
-    if checkbox then
-        EnableMusic = not EnableMusic
-        ConfigFile:set("settings", "appenabled", EnableMusic)
-        needToSave = true
-    end
-
-    ui.separator()
-    ui.text("VOLUME")
-    ui.separator()
-
+function VolumeTab()
     ui.text('Maximum Music Volume (Relative to Master volume)')
     local sliderValue1 = ConfigMaxVolume
     sliderValue1 = ui.slider("(Default 0.833) ##slider1", sliderValue1, 0, 1)
     if ConfigMaxVolume ~= sliderValue1 then
         ConfigMaxVolume = sliderValue1
         ConfigFile:set("settings", "volume", sliderValue1)
-        needToSave = true
+        NeedToSaveConfig = true
     end
 
-    ui.separator()
-    ui.text("SESSIONS")
-    ui.separator()
-
-    checkbox = ui.checkbox("Enable Practice Playlist (If disabled, using race music during practice)", EnablePracticePlaylist)
-    if checkbox then
-        EnablePracticePlaylist = not EnablePracticePlaylist
-        ConfigFile:set("settings", "practiceenabled", EnablePracticePlaylist)
-        needToSave = true
-    end
-
-    checkbox = ui.checkbox("Enable Qualifying Playlist (If disabled, using race music during qualifiers)", EnableQualifyingPlaylist)
-    if checkbox then
-        EnableQualifyingPlaylist = not EnableQualifyingPlaylist
-        ConfigFile:set("settings", "qualifyingenabled", EnableQualifyingPlaylist)
-        needToSave = true
-    end
-
-    checkbox = ui.checkbox("Enable Idle mode playlist", EnableIdlePlaylist)
-    if checkbox then
-        EnableIdlePlaylist = not EnableIdlePlaylist
-        ConfigFile:set("settings", "idleenabled", EnableIdlePlaylist)
-        needToSave = true
-    end
-
-    checkbox = ui.checkbox("Enable Replay mode playlist", EnableReplayPlaylist)
-    if checkbox then
-        EnableReplayPlaylist = not EnableReplayPlaylist
-        ConfigFile:set("settings", "replayenabled", EnableReplayPlaylist)
-        needToSave = true
-    end
-
-    checkbox = ui.checkbox("Enable Finish playlists", EnableFinishPlaylist)
-    if checkbox then
-        EnableFinishPlaylist = not EnableFinishPlaylist
-        ConfigFile:set("settings", "finishenabled", EnableFinishPlaylist)
-        needToSave = true
-    end
-
-    checkbox = ui.checkbox("Play Victory Music if finished in Top25%, otherwise play only if finished in Top3", PodiumFinishTop25Percent)
-    if checkbox then
-        PodiumFinishTop25Percent = not PodiumFinishTop25Percent
-        ConfigFile:set("settings", "podiumtop25", PodiumFinishTop25Percent)
-        needToSave = true
-    end
-
-    ui.separator()
-    ui.text("BEHAVIOUR")
-    ui.separator()
-
-    ui.text('Intensity Level Threshold')
-    ui.text('#Intensity percentage at which HighIntensity playlist is used.')
-    local sliderValue2 = ConfigHighIntensityThreshold
-    sliderValue2 = ui.slider("(Default 0.6) ##slider2", sliderValue2, 0, 1)
-    if ConfigHighIntensityThreshold ~= sliderValue2 then
-        ConfigHighIntensityThreshold = sliderValue2
-        ConfigFile:set("settings", "highintensitythreshold", sliderValue2)
-        needToSave = true
-    end
-    ui.text('?You can drop this all the way to 0 to completely skip')
-    ui.text('  low intensity tier and have only one tier of music for races.')
-    ui.text('?The value is calculated based on your position related to ')
-    ui.text('  the amount of cars in the race, on how far the race has progressed,')
-    ui.text('  and how fast the car you are driving is, both average and top.')
-    ui.text('  Each of those contributes 25% intensity. However,')
-    ui.text('  intensity is boosted when you are near top positions')
-    ui.text('  or near the end of the race')
     ui.separator()
     ui.text('Minimum Music Volume (For dynamic adjustments)')
     ui.text('#Percentage of Maximum Volume, not an absolute value.')
@@ -640,24 +621,71 @@ function script.windowMain()
     if ConfigMinTargetVolumeMultiplier ~= sliderValue3 then
         ConfigMinTargetVolumeMultiplier = sliderValue3
         ConfigFile:set("settings", "minvolume", sliderValue3)
-        needToSave = true
+        NeedToSaveConfig = true
     end
-    ui.text('?The app is adjusting current volume based on a few events.')
-    ui.text('  This value defines how low the volume can drop relative to Max.')
+    if ui.itemHovered() then
+        ui.setTooltip('The app is adjusting current volume based on a few events. This value defines how low the volume can drop relative to Max.')
+    end
+end
+
+function SessionsTab()
     
-    --[[ -- Broken, CurrentTrack:isPaused() doesn't exist for some reason
-    ui.separator()
-    checkbox = ui.checkbox("Pause music when game is paused", ConfigPauseMusicOnGamePaused)
+    checkbox = ui.checkbox("Enable Practice Playlist (If disabled, using race music during practice)", EnablePracticePlaylist)
     if checkbox then
-        ConfigPauseMusicOnGamePaused = not ConfigPauseMusicOnGamePaused
-        ConfigFile:set("settings", "pauseongamepause", ConfigPauseMusicOnGamePaused)
-        needToSave = true
+        EnablePracticePlaylist = not EnablePracticePlaylist
+        ConfigFile:set("settings", "practiceenabled", EnablePracticePlaylist)
+        NeedToSaveConfig = true
     end
-    ui.text('?If disabled, music volume turns very low when paused.')
-    ]]
-    ui.separator()
-    ui.text("FADE TRANSITIONS")
-    ui.separator()
+
+    checkbox = ui.checkbox("Enable Qualifying Playlist (If disabled, using race music during qualifiers)", EnableQualifyingPlaylist)
+    if checkbox then
+        EnableQualifyingPlaylist = not EnableQualifyingPlaylist
+        ConfigFile:set("settings", "qualifyingenabled", EnableQualifyingPlaylist)
+        NeedToSaveConfig = true
+    end
+
+    checkbox = ui.checkbox("Enable Idle mode playlist", EnableIdlePlaylist)
+    if checkbox then
+        EnableIdlePlaylist = not EnableIdlePlaylist
+        ConfigFile:set("settings", "idleenabled", EnableIdlePlaylist)
+        NeedToSaveConfig = true
+    end
+
+    checkbox = ui.checkbox("Enable Replay mode playlist", EnableReplayPlaylist)
+    if checkbox then
+        EnableReplayPlaylist = not EnableReplayPlaylist
+        ConfigFile:set("settings", "replayenabled", EnableReplayPlaylist)
+        NeedToSaveConfig = true
+    end
+
+    checkbox = ui.checkbox("Enable Finish playlists", EnableFinishPlaylist)
+    if checkbox then
+        EnableFinishPlaylist = not EnableFinishPlaylist
+        ConfigFile:set("settings", "finishenabled", EnableFinishPlaylist)
+        NeedToSaveConfig = true
+    end
+
+    checkbox = ui.checkbox("Play Victory Music if finished in Top25%, otherwise play only if finished in Top3", PodiumFinishTop25Percent)
+    if checkbox then
+        PodiumFinishTop25Percent = not PodiumFinishTop25Percent
+        ConfigFile:set("settings", "podiumtop25", PodiumFinishTop25Percent)
+        NeedToSaveConfig = true
+    end
+end
+
+function BehaviourTab()
+    ui.text('Intensity Level Threshold')
+    ui.text('#Intensity percentage at which HighIntensity playlist is used.')
+    local sliderValue2 = ConfigHighIntensityThreshold
+    sliderValue2 = ui.slider("(Default 0.6) ##slider2", sliderValue2, 0, 1)
+    if ConfigHighIntensityThreshold ~= sliderValue2 then
+        ConfigHighIntensityThreshold = sliderValue2
+        ConfigFile:set("settings", "highintensitythreshold", sliderValue2)
+        NeedToSaveConfig = true
+    end
+    if ui.itemHovered() then
+        ui.setTooltip('You can drop this all the way to 0 to completely skip low intensity tier and have only one tier of music for races. The value is calculated based on your position related to the amount of cars in the race, on how far the race has progressed, and how fast the car you are driving is, both average and top. Each of those contributes 25% intensity. However, intensity is boosted when you are near top positions or near the end of the race')
+    end
 
     ui.text('Fade-In Speed Multiplier')
 
@@ -666,9 +694,11 @@ function script.windowMain()
     if ConfigFadeInSpeed ~= sliderValue4 then
         ConfigFadeInSpeed = sliderValue4
         ConfigFile:set("settings", "fadein", sliderValue4)
-        needToSave = true
+        NeedToSaveConfig = true
     end
-    ui.text('?Higher is faster. Completely disables fade-ins when maxed.')
+    if ui.itemHovered() then
+        ui.setTooltip('Higher is faster. Completely disables fade-ins when maxed.')
+    end
 
     ui.separator()
     ui.text('Fade-Out Speed Multiplier')
@@ -678,60 +708,130 @@ function script.windowMain()
     if ConfigFadeOutSpeed ~= sliderValue5 then
         ConfigFadeOutSpeed = sliderValue5
         ConfigFile:set("settings", "fadeout", sliderValue5)
-        needToSave = true
+        NeedToSaveConfig = true
     end
-    ui.text('?Higher is faster. Completely disables fade-outs when maxed.')
-
-    ui.separator()
-    ui.text("DYNAMIC VOLUME FADEOUT")
-    ui.separator()
+    if ui.itemHovered() then
+        ui.setTooltip('Higher is faster. Completely disables fade-outs when maxed.')
+    end
 
     checkbox = ui.checkbox("Enable caution flag volume fadeout", EnableDynamicCautionVolume)
-    ui.text('?Volume will drop down when you are under yellow or blue flag.')
-    ui.text('  It will also drop when you get a slowdown penalty.')
-    ui.text('  It is intended to make you focused during cautious situations.')
+    if ui.itemHovered() then
+        ui.setTooltip('Volume will drop down when you are under yellow or blue flag. It will also drop when you get a slowdown penalty. It is intended to make you focused during cautious situations.')
+    end
     if checkbox then
         EnableDynamicCautionVolume = not EnableDynamicCautionVolume
         ConfigFile:set("settings", "cautionfadeout", EnableDynamicCautionVolume)
-        needToSave = true
+        NeedToSaveConfig = true
     end
-    ui.separator()
 
     checkbox = ui.checkbox("Enable opponent proximity volume fadeout", EnableDynamicProximityVolume)
-    ui.text('?Volume will drop down when you have other cars around you.')
-    ui.text('  Proximity check range also increases with speed.')
+    if ui.itemHovered() then
+        ui.setTooltip('Volume will drop down when you have other cars around you. Proximity check range also increases with speed.')
+    end
     if checkbox then
         EnableDynamicProximityVolume = not EnableDynamicProximityVolume
         ConfigFile:set("settings", "proximityfadeout", EnableDynamicProximityVolume)
-        needToSave = true
+        NeedToSaveConfig = true
     end
-    ui.separator()
 
     checkbox = ui.checkbox("Enable low speed volume fadeout", EnableDynamicSpeedVolume)
-    ui.text('?Volume will drop down when you drive slow.')
-    ui.text('  The app calibrates itself to your car and track combo after a few laps.')
-    ui.text('  Starting value is to use average speed of 200.')
+    if ui.itemHovered() then
+        ui.setTooltip('Volume will drop down when you drive slow. The app calibrates itself to your car and track combo after a few laps. Starting value is to use average speed of 200.')
+    end
     if checkbox then
         EnableDynamicSpeedVolume = not EnableDynamicSpeedVolume
         ConfigFile:set("settings", "speedfadeout", EnableDynamicSpeedVolume)
-        needToSave = true
+        NeedToSaveConfig = true
     end
-    ui.separator()
 
     checkbox = ui.checkbox("Enable crashing volume fadeout", EnableDynamicCrashingVolume)
-    ui.text('?Volume will drop down when you crash into wall or another car.')
-    ui.text('  The harder the crash, the more the volume drops.')
+    if ui.itemHovered() then
+        ui.setTooltip('Volume will drop down when you crash into wall or another car. The harder the crash, the more the volume drops.')
+    end
     if checkbox then
         EnableDynamicCrashingVolume = not EnableDynamicCrashingVolume
         ConfigFile:set("settings", "crashingfadeout", EnableDynamicCrashingVolume)
-        needToSave = true
+        NeedToSaveConfig = true
+    end
+end
+
+function KeybindsTab()
+    ui.text("On/Off")
+    OnOffToggleButton:control()
+    ui.text("Increase Volume By 5%")
+    IncreaseVolumeButton:control()
+    ui.text("Decrease Volume By 5%")
+    DecreaseVolumeButton:control()
+    ui.text("Skip Track")
+    SkipTrackButton:control()
+end
+
+function script.windowMain()
+
+    NeedToSaveConfig = false
+    local checkbox
+
+    checkbox = ui.checkbox("Enable Music", EnableMusic)
+    if checkbox then
+        EnableMusic = not EnableMusic
+        ConfigFile:set("settings", "appenabled", EnableMusic)
+        NeedToSaveConfig = true
     end
 
-    ui.separator()
-    ui.text("")
-    ui.separator()
+    ui.tabBar("Categories", {}, TabsFunction)
 
-    if needToSave then
+    
+    --[[ -- Broken, CurrentTrack:isPaused() doesn't exist for some reason
+    ui.separator()
+    checkbox = ui.checkbox("Pause music when game is paused", ConfigPauseMusicOnGamePaused)
+    if checkbox then
+        ConfigPauseMusicOnGamePaused = not ConfigPauseMusicOnGamePaused
+        ConfigFile:set("settings", "pauseongamepause", ConfigPauseMusicOnGamePaused)
+        NeedToSaveConfig = true
+    end
+    ui.text('?If disabled, music volume turns very low when paused.')
+    ]]
+
+    if NeedToSaveConfig then
         ConfigFile:save()
     end
 end
+
+ac.setWindowSizeConstraints('main', vec2(550,100), vec2(550,1000))
+
+-- Keybindings
+
+function OnOffToggleFunction()
+    EnableMusic = not EnableMusic
+    ConfigFile:set("settings", "appenabled", EnableMusic)
+    ConfigFile:save()
+end
+
+function IncreaseVolumeFunction()
+    ConfigMaxVolume = math.min(1, ConfigMaxVolume + 0.05)
+    ConfigFile:set("settings", "volume", ConfigMaxVolume)
+    ConfigFile:save()
+end
+
+function DecreaseVolumeFunction()
+    ConfigMaxVolume = math.max(0, ConfigMaxVolume - 0.05)
+    ConfigFile:set("settings", "volume", ConfigMaxVolume)
+    ConfigFile:save()
+end
+
+function SkipTrackFunction()
+    SessionSwitched = true
+    ConfigFile:save()
+end
+
+OnOffToggleButton = ac.ControlButton('app.DynamicMusicPlayer/OnOff Toggle Button')
+OnOffToggleButton:onPressed(OnOffToggleFunction)
+
+IncreaseVolumeButton = ac.ControlButton('app.DynamicMusicPlayer/Increase Volume Button')
+IncreaseVolumeButton:onPressed(IncreaseVolumeFunction)
+
+DecreaseVolumeButton = ac.ControlButton('app.DynamicMusicPlayer/Decrease Toggle Button')
+DecreaseVolumeButton:onPressed(DecreaseVolumeFunction)
+
+SkipTrackButton = ac.ControlButton('app.DynamicMusicPlayer/Skip Track Button')
+SkipTrackButton:onPressed(SkipTrackFunction)
