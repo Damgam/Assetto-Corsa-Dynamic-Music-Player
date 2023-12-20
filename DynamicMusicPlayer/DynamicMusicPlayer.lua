@@ -203,11 +203,11 @@ function updateRaceStatusData()
         PlayedFinishTrack = false
     end
 
-    if Session.type == 3 and Sim.timeToSessionStart > 0 and Sim.timeToSessionStart < 10000 then
+    if Session.type == 3 and Sim.timeToSessionStart > 0 and Sim.timeToSessionStart < 10000 and (not Sim.isReplayActive) then
         IdleTimer = -10
         SessionSwitched = true
         StartMusic = true
-    elseif previousSessionStartTimer < Sim.timeToSessionStart-1 then
+    elseif previousSessionStartTimer < Sim.timeToSessionStart-1 and (not Sim.isReplayActive)then
         if EnableIdlePlaylist then
             IdleTimer = math.max(11, IdleTimer)
         end
@@ -504,6 +504,7 @@ function getNewTrack()
 
     FilePath = testFilePath[2]
     ac.log(testFilePath[1], FilePath)
+    CurrentlyPlaying = testFilePath[1]
 
     return FilePath
 end
@@ -601,6 +602,7 @@ function TabsFunction()
     ui.tabItem("Sessions", {}, SessionsTab)
     ui.tabItem("Behaviour", {}, BehaviourTab)
     ui.tabItem("Keybinds", {}, KeybindsTab)
+    ui.tabItem("Debug", {}, DebugTab)
 end
 
 function VolumeTab()
@@ -665,12 +667,6 @@ function SessionsTab()
         NeedToSaveConfig = true
     end
 
-    checkbox = ui.checkbox("Play Victory Music if finished in Top25%, otherwise play only if finished in Top3", PodiumFinishTop25Percent)
-    if checkbox then
-        PodiumFinishTop25Percent = not PodiumFinishTop25Percent
-        ConfigFile:set("settings", "podiumtop25", PodiumFinishTop25Percent)
-        NeedToSaveConfig = true
-    end
 end
 
 function BehaviourTab()
@@ -753,6 +749,13 @@ function BehaviourTab()
         ConfigFile:set("settings", "crashingfadeout", EnableDynamicCrashingVolume)
         NeedToSaveConfig = true
     end
+
+    checkbox = ui.checkbox("Play Victory Music if finished in Top25%, otherwise play only if finished in Top3", PodiumFinishTop25Percent)
+    if checkbox then
+        PodiumFinishTop25Percent = not PodiumFinishTop25Percent
+        ConfigFile:set("settings", "podiumtop25", PodiumFinishTop25Percent)
+        NeedToSaveConfig = true
+    end
 end
 
 function KeybindsTab()
@@ -764,6 +767,19 @@ function KeybindsTab()
     DecreaseVolumeButton:control()
     ui.text("Skip Track")
     SkipTrackButton:control()
+end
+
+function DebugTab()
+    ui.text("CurrentlyPlaying: " .. CurrentlyPlaying)
+    ui.text("Playlist: " .. MusicType)
+    ui.text("IntensityLevel: " .. IntensityLevel)
+    ui.text("Top Speed: " .. TopSpeed)
+    ui.text("Average Speed: " .. AverageSpeed)
+    ui.text("Crash Value: " .. HitValue)
+    ui.text("MaxVolume: " .. MaxVolume)
+    ui.text("Volume Modifier: " .. TargetVolumeMultiplier)
+    ui.text("Target Volume: " .. (TargetVolume*TargetVolumeMultiplier))
+    ui.text("Current Volume: " .. CurrentVolume)
 end
 
 function script.windowMain()

@@ -1,3 +1,8 @@
+0.9.1
+- Added new tab in Settings which shows you a few important values like top speed, average speed and intensity level.
+- Moved Top25% Victory Music toggle from Sessions to Behaviour tab
+- Disabled session switch for replays to fix music being skipped when rewinding back.
+
 0.9
 - Redesigned Settings UI app.
 - Added keybinding for a few actions, like increasing/decreasing volume, skipping track and enabling/disabling music entirely
