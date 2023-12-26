@@ -1,3 +1,6 @@
+1.0
+- Speed based volume peak is now calculated based on (AverageSpeed+TopSpeed)/2 instead of AverageSpeed*1.25 for faster callibration
+
 0.9.1
 - Added new tab in Settings which shows you a few important values like top speed, average speed and intensity level.
 - Moved Top25% Victory Music toggle from Sessions to Behaviour tab

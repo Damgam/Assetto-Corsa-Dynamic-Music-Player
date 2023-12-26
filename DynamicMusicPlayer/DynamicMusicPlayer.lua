@@ -277,7 +277,7 @@ function updateRaceStatusData()
         local SpeedVolumeMultiplier
         local ProximityVolumeMultiplier
         if EnableDynamicSpeedVolume then
-            SpeedVolumeMultiplier = math.min(math.max(MinTargetVolumeMultiplier, PlayerCarSpeed/(math.ceil(AverageSpeed)*1.25)), 1)
+            SpeedVolumeMultiplier = math.min(math.max(MinTargetVolumeMultiplier, PlayerCarSpeed/(math.ceil(AverageSpeed+TopSpeed)/2)), 1)
         else
             SpeedVolumeMultiplier = 1
         end
@@ -814,6 +814,25 @@ function script.windowMain()
 end
 
 ac.setWindowSizeConstraints('main', vec2(550,100), vec2(550,1000))
+
+-- Now Playing
+
+local nowplayingicon = ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/" .. "icon.png"
+local nowplayingsize = 1
+function script.windowNowPlaying()
+    ui.columns(2, false, "NowPlayingColumns")
+
+    ui.beginOutline()
+    ui.drawImage(nowplayingicon, vec2(15, 10), vec2(75*nowplayingsize, 70*nowplayingsize))
+    ui.setColumnWidth(0, 75*nowplayingsize)
+
+    ui.nextColumn()
+    ui.setColumnWidth(1, 10000)
+
+    ui.dwriteText("Now Playing:", 20*nowplayingsize, 1)
+    ui.dwriteText(CurrentlyPlaying, 20*nowplayingsize, 1)
+    ui.endOutline(0, 1.5)
+end
 
 -- Keybindings
 
