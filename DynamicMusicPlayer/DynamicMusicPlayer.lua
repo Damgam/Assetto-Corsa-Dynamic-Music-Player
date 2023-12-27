@@ -196,6 +196,7 @@ updateConfig()
 local previousSessionStartTimer = 99999999
 PlayedFinishTrack = false
 SessionSwitched = false
+TrackSwitched = false
 function updateRaceStatusData()
 
     Sim = ac.getSim()
@@ -370,7 +371,7 @@ function updateRaceStatusData()
     (MusicType  == "highintensity" and IntensityLevel < HighIntensityThreshold*0.9) or -- High intensity music is playing but it should be playing low instead
     (MusicType  ~= "finish" and PlayerFinished and (not PlayedFinishTrack)) or -- We finished the race
     (EnableMusic == false) or -- We toggled off the music, turn it off
-    (SessionSwitched == true) or -- Session has switched so we should play new track
+    (SessionSwitched or TrackSwitched) or -- Session has switched so we should play new track
     (CurrentTrack and CurrentTrack:currentTime() > CurrentTrack:duration() - 2) -- Track is almost over, fade it out.
     ) then
         TargetVolume = -10
@@ -388,10 +389,12 @@ function updateRaceStatusData()
 
     if MusicType and ( -- boost fade-out music 
     (MusicType ~= "finish" and PlayerFinished) or
-    SessionSwitched or
+    TrackSwitched or
     HitValue > 0.1
     ) then
         FadeOutSpeedMultiplier = 10
+    elseif SessionSwitched then
+        FadeOutSpeedMultiplier = 2/ConfigFadeOutSpeed
     else
         FadeOutSpeedMultiplier = 1
     end
@@ -415,7 +418,7 @@ function getNewTrack()
 
     elseif PlayerFinished and (not PlayedFinishTrack) then
 
-        if PlayerCarRacePosition <= 3 or (PodiumFinishTop25Percent and PlayerCarRacePosition <= CarsInRace*0.25) then
+        if ((not PodiumFinishTop25Percent) and PlayerCarRacePosition <= 3 and PlayerCarRacePosition ~= CarsInRace) or (PodiumFinishTop25Percent and PlayerCarRacePosition <= CarsInRace*0.25) then
             FinishPodiumMusicCounter = FinishPodiumMusicCounter + 1
             if not FinishPodiumMusic[FinishPodiumMusicCounter] then
                 FinishPodiumMusicCounter = 1
@@ -577,6 +580,9 @@ function script.update(dt)
         CurrentTrack:play()
         if SessionSwitched then -- Session has switched and we just started new track for it
             SessionSwitched = false
+        end
+        if TrackSwitched then
+            TrackSwitched = false
         end
     end
 
@@ -893,7 +899,7 @@ function DecreaseVolumeFunction()
 end
 
 function SkipTrackFunction()
-    SessionSwitched = true
+    TrackSwitched = true
     ConfigFile:save()
 end
 
