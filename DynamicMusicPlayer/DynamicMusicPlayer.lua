@@ -16,13 +16,32 @@ function table_append(appendTarget, appendData)
     end
 end
 
+function string_formatTime(seconds)
+    local hours = math.floor(seconds / 3600)
+    local minutes = math.floor((seconds % 3600) / 60)
+    local seconds = math.floor(seconds % 60)
+    local hoursString = tostring(hours)
+    local minutesString = tostring(minutes)
+    local secondsString = tostring(seconds)
+    if seconds < 10 then
+        secondsString = "0" .. secondsString
+    end
+    if hours > 0 and minutes < 10 then
+        minutesString = "0" .. minutesString
+    end
+    if hours > 0 then
+        return hoursString .. ":" .. minutesString .. ":" .. secondsString
+    else
+        return minutesString .. ":" .. secondsString
+    end
+end
+
 ConfigFile = ac.INIConfig.load(ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/" .. "settings.ini")
 
 -- Config
 EnableMusic = ConfigFile:get("settings", "appenabled", 1)
 
 ConfigHighIntensityThreshold = ConfigFile:get("settings", "highintensitythreshold", 0.60) -- Low and High Intensity switch level. Scale 0 to 1
---ConfigPauseMusicOnGamePaused = ConfigFile:get("settings", "pauseongamepause", false) -- Completely pause music when game is paused -- Broken, CurrentTrack:isPaused() doesn't exist for some reason
 
 EnablePracticePlaylist = ConfigFile:get("settings", "practiceenabled", true) -- Enable Practice mode playlist, otherwise use Race music
 EnableQualifyingPlaylist = ConfigFile:get("settings", "qualifyingenabled", true) -- Enable Qualification mode playlist, otherwise use Race music
@@ -41,6 +60,10 @@ EnableDynamicCautionVolume = ConfigFile:get("settings", "cautionfadeout", true) 
 EnableDynamicProximityVolume = ConfigFile:get("settings", "proximityfadeout", true) -- turn down music volume when opponents are nearby
 EnableDynamicSpeedVolume = ConfigFile:get("settings", "speedfadeout", true) -- turn down music volume depending on speed of your car
 EnableDynamicCrashingVolume = ConfigFile:get("settings", "crashingfadeout", true) -- turn down music volume when you crash
+
+EnableNowPlayingIcon = ConfigFile:get("settings", "nowplayingicon", true)
+EnableNowPlayingTime = ConfigFile:get("settings", "nowplayingtime", true)
+NowPlayingWidgetSize = ConfigFile:get("settings", "nowplayingscale", 1)
 
 ExternalMusic = require('Music/ExternalMusicPaths')
 
@@ -534,17 +557,6 @@ function script.update(dt)
         HitSpeedLast = math.applyLag(HitSpeedLast, PlayerCarSpeed, 0.8, gameDt)
     end
 
-    --[[ -- Broken, CurrentTrack:isPaused() doesn't exist for some reason
-        if ConfigPauseMusicOnGamePaused then
-            local gameIsPaused = ac.getSim().isPaused
-            if CurrentTrack and ConfigPauseMusicOnGamePaused and gameIsPaused and (not CurrentTrack:isPaused()) then
-                CurrentTrack:pause()
-            elseif CurrentTrack and (not gameIsPaused) and CurrentTrack:isPaused() then
-                CurrentTrack:play()
-            end
-        end
-    ]]
-
     if UpdateCounter%60 == 0 then -- Script Updates
         updateConfig()
         updateRaceStatusData()
@@ -601,8 +613,10 @@ function TabsFunction()
     ui.tabItem("Volume", {}, VolumeTab)
     ui.tabItem("Sessions", {}, SessionsTab)
     ui.tabItem("Behaviour", {}, BehaviourTab)
+    ui.tabItem("NowPlaying Widget", {}, NowPlayingWidgetTab)
     ui.tabItem("Keybinds", {}, KeybindsTab)
     ui.tabItem("Debug", {}, DebugTab)
+    
 end
 
 function VolumeTab()
@@ -758,6 +772,32 @@ function BehaviourTab()
     end
 end
 
+function NowPlayingWidgetTab()
+
+    ui.text('Widget size')
+    local sliderValue6 = ConfigFile:get("settings", "nowplayingscale", 1)
+    sliderValue6 = ui.slider("(Default 1) ##slider6", sliderValue6, 0.5, 2)
+    if NowPlayingWidgetSize ~= sliderValue6 then
+        NowPlayingWidgetSize = sliderValue6
+        ConfigFile:set("settings", "nowplayingscale", sliderValue6)
+        NeedToSaveConfig = true
+    end
+
+    checkbox = ui.checkbox("Enable Icon", EnableNowPlayingIcon)
+    if checkbox then
+        EnableNowPlayingIcon = not EnableNowPlayingIcon
+        ConfigFile:set("settings", "nowplayingicon", EnableNowPlayingIcon)
+        NeedToSaveConfig = true
+    end
+
+    checkbox = ui.checkbox("Enable Timer", EnableNowPlayingTime)
+    if checkbox then
+        EnableNowPlayingTime = not EnableNowPlayingTime
+        ConfigFile:set("settings", "nowplayingtime", EnableNowPlayingTime)
+        NeedToSaveConfig = true
+    end
+end
+
 function KeybindsTab()
     ui.text("On/Off")
     OnOffToggleButton:control()
@@ -796,43 +836,41 @@ function script.windowMain()
 
     ui.tabBar("Categories", {}, TabsFunction)
 
-    
-    --[[ -- Broken, CurrentTrack:isPaused() doesn't exist for some reason
-    ui.separator()
-    checkbox = ui.checkbox("Pause music when game is paused", ConfigPauseMusicOnGamePaused)
-    if checkbox then
-        ConfigPauseMusicOnGamePaused = not ConfigPauseMusicOnGamePaused
-        ConfigFile:set("settings", "pauseongamepause", ConfigPauseMusicOnGamePaused)
-        NeedToSaveConfig = true
-    end
-    ui.text('?If disabled, music volume turns very low when paused.')
-    ]]
-
     if NeedToSaveConfig then
         ConfigFile:save()
     end
 end
 
 ac.setWindowSizeConstraints('main', vec2(550,100), vec2(550,1000))
-
+local nowplayingicon = ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/" .. "iconFlipped.png"
 -- Now Playing
-
-local nowplayingicon = ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/" .. "icon.png"
-local nowplayingsize = 1
 function script.windowNowPlaying()
     ui.columns(2, false, "NowPlayingColumns")
-
     ui.beginOutline()
-    ui.drawImage(nowplayingicon, vec2(15, 10), vec2(75*nowplayingsize, 70*nowplayingsize))
-    ui.setColumnWidth(0, 75*nowplayingsize)
-
+    if EnableNowPlayingIcon then
+        ui.drawImage(nowplayingicon, vec2(10+10*NowPlayingWidgetSize,10+10*NowPlayingWidgetSize), vec2(10+70*NowPlayingWidgetSize,15+65*NowPlayingWidgetSize), 1, vec2(1,1), vec2(0,0), ui.ImageFit.Fit)
+    end
     ui.nextColumn()
+    ui.setColumnWidth(0, 75*NowPlayingWidgetSize)
     ui.setColumnWidth(1, 10000)
-
-    ui.dwriteText("Now Playing:", 20*nowplayingsize, 1)
-    ui.dwriteText(CurrentlyPlaying, 20*nowplayingsize, 1)
+    ui.beginOutline()
+    ui.dwriteText("", math.floor(5*NowPlayingWidgetSize), 1)
+    ui.dwriteText("Now Playing:", 20*NowPlayingWidgetSize, 1)
+    local text
+    if not EnableNowPlayingTime then
+        text = CurrentlyPlaying
+    elseif EnableNowPlayingTime then
+        text = "(" .. string_formatTime(math.ceil(CurrentTrack:currentTime())) .. "/" .. string_formatTime(math.ceil(CurrentTrack:duration())) .. ") " .. CurrentlyPlaying
+    end
+    local windowWidth = ui.measureDWriteText(text, 20*NowPlayingWidgetSize, -1)
+    ui.dwriteText(text, 20*NowPlayingWidgetSize, 1)
     ui.endOutline(0, 1.5)
+
+    
+    ac.setWindowSizeConstraints('nowplaying', vec2(windowWidth.x+50+75*NowPlayingWidgetSize,100*NowPlayingWidgetSize), vec2(windowWidth.x+50+75*NowPlayingWidgetSize,100*NowPlayingWidgetSize))
 end
+
+
 
 -- Keybindings
 
