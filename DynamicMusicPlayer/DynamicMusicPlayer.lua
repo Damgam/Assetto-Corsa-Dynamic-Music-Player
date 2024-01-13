@@ -46,6 +46,7 @@ ConfigHighIntensityThreshold = ConfigFile:get("settings", "highintensitythreshol
 EnablePracticePlaylist = ConfigFile:get("settings", "practiceenabled", true) -- Enable Practice mode playlist, otherwise use Race music
 EnableQualifyingPlaylist = ConfigFile:get("settings", "qualifyingenabled", true) -- Enable Qualification mode playlist, otherwise use Race music
 EnableIdlePlaylist = ConfigFile:get("settings", "idleenabled", true) -- Enable Waiting mode playlist
+EnableIdlePlaylistOutsidePits = ConfigFile:get("settings", "idleoutsidepits", true) -- Enable Waiting mode playlist outside of pits (if the car is standing in place)
 EnableFinishPlaylist = ConfigFile:get("settings", "finishenabled", true) -- Enable Finish mode playlist
 EnableReplayPlaylist = ConfigFile:get("settings", "replayenabled", true) -- Enable Replay mode playlist
 PodiumFinishTop25Percent = ConfigFile:get("settings", "podiumtop25", true) -- if true, podium music plays if you end up in top 25%, if false, plays when you end up in the podium. // Apparently Finish music is broken in Online, yay!
@@ -60,6 +61,7 @@ EnableDynamicCautionVolume = ConfigFile:get("settings", "cautionfadeout", true) 
 EnableDynamicProximityVolume = ConfigFile:get("settings", "proximityfadeout", true) -- turn down music volume when opponents are nearby
 EnableDynamicSpeedVolume = ConfigFile:get("settings", "speedfadeout", true) -- turn down music volume depending on speed of your car
 EnableDynamicCrashingVolume = ConfigFile:get("settings", "crashingfadeout", true) -- turn down music volume when you crash
+EnableDynamicCrashingTrackSkip = ConfigFile:get("settings", "crashingfadeouttrackskip", true) -- turn down music volume when you crash
 
 EnableNowPlayingIcon = ConfigFile:get("settings", "nowplayingicon", true)
 EnableNowPlayingTime = ConfigFile:get("settings", "nowplayingtime", true)
@@ -206,12 +208,14 @@ function updateRaceStatusData()
     CarsInRace = #Session.leaderboard
     PlayerCarRacePosition = Car.racePosition
     PlayerCarSpeed = Car.speedKmh
+
     if PlayerCarSpeed > TopSpeed then
         TopSpeed = PlayerCarSpeed
     end
-    if (Car.isInPitlane or Car.isInPit) and EnableIdlePlaylist then
+
+    if ((Car.isInPitlane or Car.isInPit) or (Sim.timeToSessionStart > 0)) and EnableIdlePlaylist then
         IdleTimer = math.max(11, IdleTimer)
-    elseif PlayerCarSpeed <= 1 and EnableIdlePlaylist then
+    elseif PlayerCarSpeed <= 1 and EnableIdlePlaylist and EnableIdleMusicOutsidePits then
         IdleTimer = IdleTimer + 1
     else
         IdleTimer = 0
@@ -231,13 +235,14 @@ function updateRaceStatusData()
         IdleTimer = -10
         SessionSwitched = true
         StartMusic = true
-    elseif previousSessionStartTimer < Sim.timeToSessionStart-1 and (not Sim.isReplayActive)then
+    elseif previousSessionStartTimer < Sim.timeToSessionStart-1 and (not Sim.isReplayActive) then
         if EnableIdlePlaylist then
             IdleTimer = math.max(11, IdleTimer)
         end
         SessionSwitched = true
     end
     previousSessionStartTimer = Sim.timeToSessionStart
+
     IntensityBooster = 0
     if CarsInRace > 1 then
         PositionIntensity = (-((PlayerCarRacePosition - 1)/(CarsInRace - 1)))+1
@@ -355,15 +360,22 @@ function updateRaceStatusData()
         end
     end
 
-    if EnableDynamicCrashingVolume and HitValue > 0.1 then
-        TargetVolumeMultiplier = TargetVolumeMultiplier*(1-HitValue)
+    if EnableDynamicCrashingVolume and HitValue > 0.01 then
+        if PlayerCarSpeed < 30 then
+            TargetVolumeMultiplier = 0
+            if EnableDynamicCrashingTrackSkip then
+                TrackSwitched = true
+            end
+        else
+            TargetVolumeMultiplier = math.min(1, math.max(0, TargetVolumeMultiplier * (1-HitValue)))
+        end
     end
 
     if MusicType and (
     (MusicType  == "replay" and (not Sim.isReplayActive) and EnableReplayPlaylist) or -- We're not in replay but replay music is playing
     (MusicType  ~= "replay" and Sim.isReplayActive and EnableReplayPlaylist) or -- We're in replay but replay music is not playing
     (MusicType  == "waiting" and PlayerCarSpeed >= 1 and (not (Car.isInPitlane or Car.isInPit))) or -- Idle Music is playing but we're moving
-    (MusicType  ~= "waiting" and ((PlayerCarSpeed < 1 and IdleTimer > 10) or Car.isInPitlane or Car.isInPit) and MusicType  ~= "finish" and MusicType  ~= "replay") or -- We're Idle but non-idle music is playing, just make sure it's not playing finish music.
+    (MusicType  ~= "waiting" and ((PlayerCarSpeed < 1 and IdleTimer > 10) or Car.isInPitlane or Car.isInPit) and MusicType  ~= "finish" and MusicType  ~= "replay" and EnableIdlePlaylist) or -- We're Idle but non-idle music is playing, just make sure it's not playing finish music.
     (MusicType  == "practice" and Session.type ~= 1) or -- Practice music is playing but we're not in practice
     (MusicType  == "quali" and Session.type ~= 2) or -- Qualification music is playing but we're not in qualis
     ((MusicType == "lowintensity" or MusicType == "highintensity") and Session.type ~= 3) or -- Race music is playing but we're not in race
@@ -390,7 +402,7 @@ function updateRaceStatusData()
     if MusicType and ( -- boost fade-out music 
     (MusicType ~= "finish" and PlayerFinished) or
     TrackSwitched or
-    HitValue > 0.1
+    (HitValue > 0.01 and PlayerCarSpeed < 30)
     ) then
         FadeOutSpeedMultiplier = 10
     elseif SessionSwitched then
@@ -545,9 +557,9 @@ function script.update(dt)
         Car = ac.getCar(Sim.focusedCar)
         PlayerCarSpeed = Car.speedKmh
 
-        if HitValue > 0.1 then
-            HitValue = HitValue - FadeInSpeed*0.2
-        elseif HitValue <= 0.1 then
+        if HitValue > 0.01 then
+            HitValue = HitValue - (PlayerCarSpeed*0.00001) - 0.0005
+        elseif HitValue <= 0.01 then
             HitValue = 0
         end
 
@@ -566,7 +578,12 @@ function script.update(dt)
     end
 
     if (StartMusic == true and Sim.timeToSessionStart < 0) or 
-    UpdateCounter%60 == 1 and EnableMusic and ConfigMaxVolume > 0 and (not CurrentTrack or CurrentTrack:currentTime() >= CurrentTrack:duration() - 1) and (Session.type ~= 3 or (Session.type == 3 and Sim.timeToSessionStart < 0 or Sim.timeToSessionStart >= 10000)) then -- Prepare playing new track
+    UpdateCounter%60 == 1 and
+    EnableMusic and
+    ConfigMaxVolume > 0 and
+    HitValue == 0 and
+    (not CurrentTrack or CurrentTrack:currentTime() >= CurrentTrack:duration() - 1) and 
+    (Session.type ~= 3 or (Session.type == 3 and (Sim.timeToSessionStart < 0 or Sim.timeToSessionStart >= 10000))) then -- Prepare playing new track
         updateRaceStatusData()
         CurrentTrack = ui.MediaPlayer(getNewTrack())
         TargetVolume = MaxVolume
@@ -576,6 +593,7 @@ function script.update(dt)
         else
             CurrentVolume = 0
         end
+        CurrentVolume = math.max(0, CurrentVolume)
         CurrentTrack:setVolume(CurrentVolume)
         CurrentTrack:play()
         if SessionSwitched then -- Session has switched and we just started new track for it
@@ -593,6 +611,7 @@ function script.update(dt)
             else
                 CurrentVolume = (TargetVolume*TargetVolumeMultiplier)
             end
+            CurrentVolume = math.max(0, CurrentVolume)
             CurrentTrack:setVolume(CurrentVolume)
             if CurrentVolume <= 0 and TargetVolume < 0 then
                 CurrentTrack:setVolume(0)
@@ -605,11 +624,13 @@ function script.update(dt)
             else
                 CurrentVolume = (TargetVolume*TargetVolumeMultiplier)
             end
+            CurrentVolume = math.max(0, CurrentVolume)
             CurrentTrack:setVolume(CurrentVolume)
         end
     end
 
-    if HitValue > 0 then
+    if HitValue > 0 and PlayerCarSpeed < 30 then
+        CurrentVolume = math.max(0, CurrentVolume)
         CurrentTrack:setVolume(CurrentVolume)
     end
 
@@ -671,6 +692,15 @@ function SessionsTab()
         EnableIdlePlaylist = not EnableIdlePlaylist
         ConfigFile:set("settings", "idleenabled", EnableIdlePlaylist)
         NeedToSaveConfig = true
+    end
+
+    if EnableIdlePlaylist then
+        checkbox = ui.checkbox("Enable Idle mode playlist outside of pits", EnableIdlePlaylistOutsidePits)
+        if checkbox then
+            EnableIdlePlaylistOutsidePits = not EnableIdlePlaylistOutsidePits
+            ConfigFile:set("settings", "idleoutsidepits", EnableIdlePlaylistOutsidePits)
+            NeedToSaveConfig = true
+        end
     end
 
     checkbox = ui.checkbox("Enable Replay mode playlist", EnableReplayPlaylist)
@@ -762,12 +792,24 @@ function BehaviourTab()
 
     checkbox = ui.checkbox("Enable crashing volume fadeout", EnableDynamicCrashingVolume)
     if ui.itemHovered() then
-        ui.setTooltip('Volume will drop down when you crash into wall or another car. The harder the crash, the more the volume drops.')
+        ui.setTooltip('Music will fade away when you crash.')
     end
     if checkbox then
         EnableDynamicCrashingVolume = not EnableDynamicCrashingVolume
         ConfigFile:set("settings", "crashingfadeout", EnableDynamicCrashingVolume)
         NeedToSaveConfig = true
+    end
+
+    if EnableDynamicCrashingVolume then
+        checkbox = ui.checkbox("Enable music track skip when crashing out", EnableDynamicCrashingTrackSkip)
+        if ui.itemHovered() then
+            ui.setTooltip('When you crash into full stop, current track will be stopped and the new one will start once the crashing effect fades away.')
+        end
+        if checkbox then
+            EnableDynamicCrashingTrackSkip = not EnableDynamicCrashingTrackSkip
+            ConfigFile:set("settings", "crashingfadeouttrackskip", EnableDynamicCrashingTrackSkip)
+            NeedToSaveConfig = true
+        end
     end
 
     checkbox = ui.checkbox("Play Victory Music if finished in Top25%, otherwise play only if finished in Top3", PodiumFinishTop25Percent)

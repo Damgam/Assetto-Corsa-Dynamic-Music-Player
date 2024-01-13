@@ -1,3 +1,9 @@
+1.1
+- Reworked Crash effect. It now kicks in to full volume fadeout if you crash into standing still. Also skips the track to the next one. Small taps/scratches will still drop the volume slightly.
+- Fixed music switching non-stop in pits when idle playlist is disabled.
+- Added new option to disable waiting/idle music when you stop moving outside of pits
+- Added new option to toggle the new track skip behaviour on crashing.
+
 1.0
 - Speed based volume peak is now calculated based on (AverageSpeed+TopSpeed)/2 instead of AverageSpeed*1.25 for faster callibration
 - Added new on-screen widget showing you currently played track
