@@ -64,8 +64,11 @@ EnableDynamicCrashingVolume = ConfigFile:get("settings", "crashingfadeout", true
 EnableDynamicCrashingTrackSkip = ConfigFile:get("settings", "crashingfadeouttrackskip", true) -- turn down music volume when you crash
 
 EnableNowPlayingIcon = ConfigFile:get("settings", "nowplayingicon", true)
+EnableAnimatedNowPlayingIcon = ConfigFile:get("settings", "nowplayinganimatedicon", true)
 EnableNowPlayingTime = ConfigFile:get("settings", "nowplayingtime", true)
 NowPlayingWidgetSize = ConfigFile:get("settings", "nowplayingscale", 1)
+EnableNowPlayingWidgetFadeout = ConfigFile:get("settings", "nowplayingfadeout", false)
+NowPlayingWidgetFadeoutTime = ConfigFile:get("settings", "nowplayingfadeouttime", 10)
 
 ExternalMusic = require('Music/ExternalMusicPaths')
 
@@ -183,6 +186,19 @@ PlayerFinished              = false
 PlayerBestLapTime           = 180
 AverageSpeed                = 100
 TopSpeed                    = 0
+
+NowPlayingBars = {
+    [1] = {current = math.random(0,128)/128, target = math.random(0,128)/128},
+    [2] = {current = math.random(0,128)/128, target = math.random(0,128)/128},
+    [3] = {current = math.random(0,128)/128, target = math.random(0,128)/128},
+    [4] = {current = math.random(0,128)/128, target = math.random(0,128)/128},
+    [5] = {current = math.random(0,128)/128, target = math.random(0,128)/128},
+    [6] = {current = math.random(0,128)/128, target = math.random(0,128)/128},
+    [7] = {current = math.random(0,128)/128, target = math.random(0,128)/128},
+}
+
+NowPlayingOpacityCurrent = 0
+NowPlayingOpacityTarget = 0
 
 
 function updateConfig()
@@ -531,24 +547,24 @@ function getNewTrack()
 
     end
 
-    ac.log("ReplayMusicCounter", ReplayMusicCounter)
-    ac.log("FinishPodiumMusicCounter", FinishPodiumMusicCounter)
-    ac.log("FinishMusicCounter", FinishMusicCounter)
-    ac.log("WaitingMusicCounter", WaitingMusicCounter)
-    ac.log("PracticeMusicCounter", PracticeMusicCounter)
-    ac.log("QualificationMusicCounter", QualificationMusicCounter)
-    ac.log("LowMusicCounter", LowMusicCounter)
-    ac.log("HighMusicCounter", HighMusicCounter)
+    --ac.log("ReplayMusicCounter", ReplayMusicCounter)
+    --ac.log("FinishPodiumMusicCounter", FinishPodiumMusicCounter)
+    --ac.log("FinishMusicCounter", FinishMusicCounter)
+    --ac.log("WaitingMusicCounter", WaitingMusicCounter)
+    --ac.log("PracticeMusicCounter", PracticeMusicCounter)
+    --ac.log("QualificationMusicCounter", QualificationMusicCounter)
+    --ac.log("LowMusicCounter", LowMusicCounter)
+    --ac.log("HighMusicCounter", HighMusicCounter)
 
     FilePath = testFilePath[2]
-    ac.log(testFilePath[1], FilePath)
+    --ac.log(testFilePath[1], FilePath)
     CurrentlyPlaying = testFilePath[1]
 
     return FilePath
 end
 
 UpdateCounter = 0
-
+SkipAttempts = 0
 function script.update(dt)
     local gameDt = ac.getGameDeltaT()
     UpdateCounter = UpdateCounter+1
@@ -602,9 +618,13 @@ function script.update(dt)
         if TrackSwitched then
             TrackSwitched = false
         end
+        SkipAttempts = 0
     end
 
     if UpdateCounter%5 == 1 and (Session.type ~= 3 or (Session.type == 3 and (Sim.timeToSessionStart < -10000 or Sim.timeToSessionStart > 0))) then
+        if CurrentTrack then
+            CurrentVolume = CurrentTrack:volume()
+        end
         if CurrentTrack and CurrentVolume >= (TargetVolume*TargetVolumeMultiplier) + math.min(FadeInSpeed, FadeOutSpeed) then
             if ConfigFadeOutSpeed < 3 then
                 CurrentVolume = CurrentVolume - (FadeOutSpeed*FadeOutSpeedMultiplier)
@@ -613,10 +633,36 @@ function script.update(dt)
             end
             CurrentVolume = math.max(0, CurrentVolume)
             CurrentTrack:setVolume(CurrentVolume)
+            --ac.log("we're fading out!", CurrentVolume)
             if CurrentVolume <= 0 and TargetVolume < 0 then
+                --ac.log("we're trying to skip the song!", CurrentVolume)
                 CurrentTrack:setVolume(0)
-                CurrentTrack:setCurrentTime(999999)
+                CurrentTrack:setCurrentTime(CurrentTrack:duration())
                 CurrentVolume = 0
+
+                SkipAttempts = SkipAttempts + 1
+                --ac.log("SkipAttempts", SkipAttempts)
+                if EnableMusic and SkipAttempts > 20 and (Session.type ~= 3 or (Session.type == 3 and (Sim.timeToSessionStart < 0 or Sim.timeToSessionStart >= 10000))) then
+                    updateRaceStatusData()
+                    CurrentTrack = ui.MediaPlayer(getNewTrack())
+                    TargetVolume = MaxVolume
+                    if StartMusic then
+                        CurrentVolume = TargetVolume*TargetVolumeMultiplier
+                        StartMusic = false
+                    else
+                        CurrentVolume = 0
+                    end
+                    CurrentVolume = math.max(0, CurrentVolume)
+                    CurrentTrack:setVolume(CurrentVolume)
+                    CurrentTrack:play()
+                    if SessionSwitched then -- Session has switched and we just started new track for it
+                        SessionSwitched = false
+                    end
+                    if TrackSwitched then
+                        TrackSwitched = false
+                    end
+                    SkipAttempts = 0
+                end
             end
         elseif CurrentTrack and CurrentVolume <= (TargetVolume*TargetVolumeMultiplier) - math.min(FadeInSpeed, FadeOutSpeed) then
             if ConfigFadeInSpeed < 3 then
@@ -624,6 +670,7 @@ function script.update(dt)
             else
                 CurrentVolume = (TargetVolume*TargetVolumeMultiplier)
             end
+            --ac.log("we're fading in!", CurrentVolume)
             CurrentVolume = math.max(0, CurrentVolume)
             CurrentTrack:setVolume(CurrentVolume)
         end
@@ -837,12 +884,39 @@ function NowPlayingWidgetTab()
         ConfigFile:set("settings", "nowplayingicon", EnableNowPlayingIcon)
         NeedToSaveConfig = true
     end
+    
+    if EnableNowPlayingIcon then
+        checkbox = ui.checkbox("Enable Animated Icon", EnableAnimatedNowPlayingIcon)
+        if checkbox then
+            EnableAnimatedNowPlayingIcon = not EnableAnimatedNowPlayingIcon
+            ConfigFile:set("settings", "nowplayinganimatedicon", EnableAnimatedNowPlayingIcon)
+            NeedToSaveConfig = true
+        end
+    end
 
     checkbox = ui.checkbox("Enable Timer", EnableNowPlayingTime)
     if checkbox then
         EnableNowPlayingTime = not EnableNowPlayingTime
         ConfigFile:set("settings", "nowplayingtime", EnableNowPlayingTime)
         NeedToSaveConfig = true
+    end
+
+    checkbox = ui.checkbox("Show the widget only when new track starts", EnableNowPlayingWidgetFadeout)
+    if checkbox then
+        EnableNowPlayingWidgetFadeout = not EnableNowPlayingWidgetFadeout
+        ConfigFile:set("settings", "nowplayingfadeout", EnableNowPlayingWidgetFadeout)
+        NeedToSaveConfig = true
+    end
+
+    if EnableNowPlayingWidgetFadeout then
+        ui.text('Show the widget for first ' .. math.ceil(NowPlayingWidgetFadeoutTime) .. ' seconds of new track')
+        local sliderValue7 = ConfigFile:get("settings", "nowplayingfadeouttime", 1)
+        sliderValue7 = ui.slider("Seconds (Default 10) ##slider7", sliderValue7, 5, 30, "%.1f")
+        if NowPlayingWidgetFadeoutTime ~= sliderValue7 then
+            NowPlayingWidgetFadeoutTime = sliderValue7
+            ConfigFile:set("settings", "nowplayingfadeouttime", sliderValue7)
+            NeedToSaveConfig = true
+        end
     end
 end
 
@@ -891,31 +965,92 @@ end
 
 ac.setWindowSizeConstraints('main', vec2(550,100), vec2(550,1000))
 local nowplayingicon = ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/" .. "iconFlipped.png"
+local nowplayingbar = ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/" .. "nowplayingbar.png"
 -- Now Playing
 function script.windowNowPlaying()
     ui.columns(2, false, "NowPlayingColumns")
     ui.beginOutline()
-    if EnableNowPlayingIcon then
-        ui.drawImage(nowplayingicon, vec2(10+10*NowPlayingWidgetSize,10+10*NowPlayingWidgetSize), vec2(10+70*NowPlayingWidgetSize,15+65*NowPlayingWidgetSize), 1, vec2(1,1), vec2(0,0), ui.ImageFit.Fit)
+    local windowWidthRange = 75
+    if EnableNowPlayingIcon and NowPlayingOpacityCurrent > 0 then
+        if EnableAnimatedNowPlayingIcon then
+            if UpdateCounter%10 == 0 or RefreshBarTargets then
+                NowPlayingBars = {
+                    [1] = {current = NowPlayingBars[1].current, target = math.random(0,128)/128},
+                    [2] = {current = NowPlayingBars[2].current, target = math.random(0,128)/128},
+                    [3] = {current = NowPlayingBars[3].current, target = math.random(0,128)/128},
+                    [4] = {current = NowPlayingBars[4].current, target = math.random(0,128)/128},
+                    [5] = {current = NowPlayingBars[5].current, target = math.random(0,128)/128},
+                    [6] = {current = NowPlayingBars[6].current, target = math.random(0,128)/128},
+                    [7] = {current = NowPlayingBars[7].current, target = math.random(0,128)/128},
+                }
+            end
+
+            RefreshBarTargets = true
+            for barIndex, barValue in ipairs(NowPlayingBars) do
+                if barValue.current > barValue.target then
+                    NowPlayingBars[barIndex].current = barValue.current - ((barValue.current - barValue.target)*0.1)
+                    RefreshBarTargets = false
+                elseif barValue.current < barValue.target then
+                    NowPlayingBars[barIndex].current = barValue.current - ((barValue.current - barValue.target)*0.1)
+                    RefreshBarTargets = false
+                end
+                if NowPlayingWidgetSize < 0.80 then
+                    barIndex = barIndex+1
+                end
+                if not (NowPlayingWidgetSize < 0.80 and barIndex == 1) then
+                    ui.drawImage(nowplayingbar, vec2((((barIndex)*12)+2)*NowPlayingWidgetSize, (10+50*NowPlayingWidgetSize)*(1-(barValue.current))), vec2((((barIndex+1)*12)+2)*NowPlayingWidgetSize,15+65*NowPlayingWidgetSize), rgbm(1, 1, 1, NowPlayingOpacityCurrent), vec2(1,1), vec2(0,0))
+                end
+            end
+            windowWidthRange = 14*7
+        else
+            ui.drawImage(nowplayingicon, vec2(10+10*NowPlayingWidgetSize,10+10*NowPlayingWidgetSize), vec2(10+70*NowPlayingWidgetSize,15+65*NowPlayingWidgetSize), rgbm(1, 1, 1, NowPlayingOpacityCurrent), vec2(1,1), vec2(0,0), ui.ImageFit.Fit)
+        end
     end
     ui.nextColumn()
-    ui.setColumnWidth(0, 75*NowPlayingWidgetSize)
+    ui.setColumnWidth(0, windowWidthRange*NowPlayingWidgetSize)
     ui.setColumnWidth(1, 10000)
     ui.beginOutline()
-    ui.dwriteText("", math.floor(5*NowPlayingWidgetSize), 1)
-    ui.dwriteText("Now Playing:", 20*NowPlayingWidgetSize, 1)
-    local text
+    ui.pushDWriteFont('PoppinsMedium:\\Fonts;Weight=Medium')
+    ui.dwriteText("", math.floor(5*NowPlayingWidgetSize), rgbm(1, 1, 1, NowPlayingOpacityCurrent))
+    
+    local text1
+    local text2
     if not EnableNowPlayingTime then
-        text = CurrentlyPlaying
+        text1 = "Now Playing: "
     elseif EnableNowPlayingTime then
-        text = "(" .. string_formatTime(math.ceil(CurrentTrack:currentTime())) .. "/" .. string_formatTime(math.ceil(CurrentTrack:duration())) .. ") " .. CurrentlyPlaying
+        text1 = "Now Playing: " .. "(" .. string_formatTime(math.ceil(CurrentTrack:currentTime())) .. "/" .. string_formatTime(math.ceil(CurrentTrack:duration())) .. ") "
     end
-    local windowWidth = ui.measureDWriteText(text, 20*NowPlayingWidgetSize, -1)
-    ui.dwriteText(text, 20*NowPlayingWidgetSize, 1)
+    text2 = CurrentlyPlaying
+    local windowWidth = math.max(ui.measureDWriteText(text1, 25*NowPlayingWidgetSize, -1).x, ui.measureDWriteText(text2, 25*NowPlayingWidgetSize, -1).x)
+    local windowWidth = vec2(windowWidth)
+    ui.dwriteText(text1, 20*NowPlayingWidgetSize, rgbm(1, 1, 1, NowPlayingOpacityCurrent))
+    ui.dwriteText(text2, 25*NowPlayingWidgetSize, rgbm(1, 1, 1, NowPlayingOpacityCurrent))
     ui.endOutline(0, 1.5)
+    ui.popDWriteFont()
 
     
-    ac.setWindowSizeConstraints('nowplaying', vec2(windowWidth.x+50+75*NowPlayingWidgetSize,100*NowPlayingWidgetSize), vec2(windowWidth.x+50+75*NowPlayingWidgetSize,100*NowPlayingWidgetSize))
+    ac.setWindowSizeConstraints('nowplaying', vec2(windowWidth.x+windowWidthRange+75*NowPlayingWidgetSize,100*NowPlayingWidgetSize), vec2(windowWidth.x+windowWidthRange+75*NowPlayingWidgetSize,100*NowPlayingWidgetSize))
+
+    if (not EnableNowPlayingWidgetFadeout) or (CurrentTrack:currentTime() < NowPlayingWidgetFadeoutTime and CurrentTrack:currentTime() > 0.5) then
+        NowPlayingOpacityTarget = 1
+    else
+        NowPlayingOpacityTarget = 0
+    end
+
+    if NowPlayingOpacityTarget < 0.75 and ui.mouseLocalPos().x > 0 and ui.mouseLocalPos().y > 0 and ui.mouseLocalPos().x < windowWidth.x+windowWidthRange+75*NowPlayingWidgetSize and ui.mouseLocalPos().y < 100*NowPlayingWidgetSize then
+        NowPlayingOpacityTarget = 0.75
+    end
+
+    if NowPlayingOpacityTarget > NowPlayingOpacityCurrent then
+        NowPlayingOpacityCurrent = NowPlayingOpacityCurrent + 0.02
+    elseif NowPlayingOpacityTarget < NowPlayingOpacityCurrent then
+        NowPlayingOpacityCurrent = NowPlayingOpacityCurrent - 0.02
+    end
+
+    if NowPlayingOpacityCurrent < 0.03 and NowPlayingOpacityTarget < 0.03 then
+        NowPlayingOpacityCurrent = 0
+    end
+
 end
 
 

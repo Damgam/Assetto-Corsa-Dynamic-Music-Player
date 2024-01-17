@@ -1,3 +1,8 @@
+1.2
+- Fixed rare case that would prevent tracks from switching early and make you stuck with no music for a while. (Not a bug with my app, but i've set up a workaround)
+- Added new options for Now Playing widget: Animated icon (Default Enabled) and Fadeout after X seconds (Time is configurable, Default Disabled)
+- Switched font from default to Poppins-Medium for much better text readability.
+
 1.1
 - Reworked Crash effect. It now kicks in to full volume fadeout if you crash into standing still. Also skips the track to the next one. Small taps/scratches will still drop the volume slightly.
 - Fixed music switching non-stop in pits when idle playlist is disabled.
