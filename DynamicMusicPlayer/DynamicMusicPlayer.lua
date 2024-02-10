@@ -427,138 +427,186 @@ function updateRaceStatusData()
         FadeOutSpeedMultiplier = 1
     end
 
+    if not (SessionSwitched or TrackSwitched) then
+        if Sim.timeToSessionStart > -20000 then
+            FadeOutSpeedMultiplier = FadeOutSpeedMultiplier * 0.05
+        elseif Sim.timeToSessionStart > -30000 then
+            FadeOutSpeedMultiplier = FadeOutSpeedMultiplier * 0.1
+        elseif Sim.timeToSessionStart > -40000 then
+            FadeOutSpeedMultiplier = FadeOutSpeedMultiplier * 0.2
+        elseif Sim.timeToSessionStart > -50000 then
+            FadeOutSpeedMultiplier = FadeOutSpeedMultiplier * 0.4
+        elseif Sim.timeToSessionStart > -60000 then
+            FadeOutSpeedMultiplier = FadeOutSpeedMultiplier * 0.75
+        end
+    end
+
     
 end
 updateRaceStatusData()
 
 function getNewTrack()
+    local PlayedTracksDatabase = ac.INIConfig.load(ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/" .. "data.ini")
 
-    local testFilePath
+    for attempts = 1,10 do
+        local NextTrack1
+        local NextTrack2
+        local TrackChoosen = false
 
-    if Sim.isReplayActive and EnableReplayPlaylist then
+        if Sim.isReplayActive and EnableReplayPlaylist then
 
-        ReplayMusicCounter = ReplayMusicCounter + 1
-        if not ReplayMusic[ReplayMusicCounter] then
-            ReplayMusicCounter = 1
-        end
-        testFilePath = ReplayMusic[ReplayMusicCounter]
-        MusicType = "replay"
-
-    elseif PlayerFinished and (not PlayedFinishTrack) then
-
-        if ((not PodiumFinishTop25Percent) and PlayerCarRacePosition <= 3 and PlayerCarRacePosition ~= CarsInRace) or (PodiumFinishTop25Percent and PlayerCarRacePosition <= CarsInRace*0.25) then
-            FinishPodiumMusicCounter = FinishPodiumMusicCounter + 1
-            if not FinishPodiumMusic[FinishPodiumMusicCounter] then
-                FinishPodiumMusicCounter = 1
+            ReplayMusicCounter = ReplayMusicCounter + 1
+            if not ReplayMusic[ReplayMusicCounter] then
+                ReplayMusicCounter = 1
             end
-            testFilePath = FinishPodiumMusic[FinishPodiumMusicCounter]
-        else
-            FinishMusicCounter = FinishMusicCounter + 1
-            if not FinishMusic[FinishMusicCounter] then
-                FinishMusicCounter = 1
+
+            NextTrack1 = ReplayMusic[ReplayMusicCounter]
+            NextTrack2 = ReplayMusic[ReplayMusicCounter+1]
+
+            MusicType = "replay"
+
+        elseif PlayerFinished and (not PlayedFinishTrack) then
+
+            if ((not PodiumFinishTop25Percent) and PlayerCarRacePosition <= 3 and PlayerCarRacePosition ~= CarsInRace) or (PodiumFinishTop25Percent and PlayerCarRacePosition <= CarsInRace*0.25) then
+                FinishPodiumMusicCounter = FinishPodiumMusicCounter + 1
+                if not FinishPodiumMusic[FinishPodiumMusicCounter] then
+                    FinishPodiumMusicCounter = 1
+                end
+                NextTrack1 = FinishPodiumMusic[FinishPodiumMusicCounter]
+                NextTrack2 = FinishPodiumMusic[FinishPodiumMusicCounter+1]
+            else
+                FinishMusicCounter = FinishMusicCounter + 1
+                if not FinishMusic[FinishMusicCounter] then
+                    FinishMusicCounter = 1
+                end
+                NextTrack1 = FinishMusic[FinishMusicCounter]
+                NextTrack2 = FinishMusic[FinishMusicCounter+1]
             end
-            testFilePath = FinishMusic[FinishMusicCounter]
-        end
-        MusicType = "finish"
-        PlayedFinishTrack = true
+            MusicType = "finish"
 
-    elseif ((PlayerCarSpeed < 1 and IdleTimer > 10) or Car.isInPitlane or Car.isInPit) and EnableIdlePlaylist then
+        elseif ((PlayerCarSpeed < 1 and IdleTimer > 10) or Car.isInPitlane or Car.isInPit) and EnableIdlePlaylist then
 
-        WaitingMusicCounter = WaitingMusicCounter + 1
-        if not WaitingMusic[WaitingMusicCounter] then
-            WaitingMusicCounter = 1
-        end
-        testFilePath = WaitingMusic[WaitingMusicCounter]
-        MusicType = "waiting"
+            WaitingMusicCounter = WaitingMusicCounter + 1
+            if not WaitingMusic[WaitingMusicCounter] then
+                WaitingMusicCounter = 1
+            end
+            NextTrack1 = WaitingMusic[WaitingMusicCounter]
+            NextTrack2 = WaitingMusic[WaitingMusicCounter+1]
+            MusicType = "waiting"
 
-    elseif (EnablePracticePlaylist and Session.type == 1) then
-
-        PracticeMusicCounter = PracticeMusicCounter + 1
-        if not PracticeMusic[PracticeMusicCounter] then
-            PracticeMusicCounter = 1
-        end
-        testFilePath = PracticeMusic[PracticeMusicCounter]
-        MusicType = "practice"
-
-    elseif (EnableQualifyingPlaylist and Session.type == 2) then
-
-        QualificationMusicCounter = QualificationMusicCounter + 1
-        if not QualificationMusic[QualificationMusicCounter] then
-            QualificationMusicCounter = 1
-        end
-        testFilePath = QualificationMusic[QualificationMusicCounter]
-        MusicType = "quali"
-
-    elseif Session.type == 3 and IntensityLevel < HighIntensityThreshold then
-
-        LowMusicCounter = LowMusicCounter + 1
-        if not LowMusic[LowMusicCounter] then
-            LowMusicCounter = 1
-        end
-        testFilePath = LowMusic[LowMusicCounter]
-        MusicType = "lowintensity"
-
-    elseif Session.type == 3 then
-
-        HighMusicCounter = HighMusicCounter + 1
-        if not HighMusic[HighMusicCounter] then
-            HighMusicCounter = 1
-        end
-        testFilePath = HighMusic[HighMusicCounter]
-        MusicType = "highintensity"
-
-    else
-
-        local random = math.random(1,4)
-        if EnablePracticePlaylist and random == 1 then
+        elseif (EnablePracticePlaylist and Session.type == 1) then
 
             PracticeMusicCounter = PracticeMusicCounter + 1
             if not PracticeMusic[PracticeMusicCounter] then
                 PracticeMusicCounter = 1
             end
-            testFilePath = PracticeMusic[PracticeMusicCounter]
+            NextTrack1 = PracticeMusic[PracticeMusicCounter]
+            NextTrack2 = PracticeMusic[PracticeMusicCounter+1]
+            MusicType = "practice"
 
-        elseif EnableQualifyingPlaylist and random <= 2 then
+        elseif (EnableQualifyingPlaylist and Session.type == 2) then
 
             QualificationMusicCounter = QualificationMusicCounter + 1
             if not QualificationMusic[QualificationMusicCounter] then
                 QualificationMusicCounter = 1
             end
-            testFilePath = QualificationMusic[QualificationMusicCounter]
+            NextTrack1 = QualificationMusic[QualificationMusicCounter]
+            NextTrack2 = QualificationMusic[QualificationMusicCounter+1]
+            MusicType = "quali"
 
-        elseif random <= 3 and HighIntensityThreshold > 0 then
+        elseif Session.type == 3 and IntensityLevel < HighIntensityThreshold then
 
             LowMusicCounter = LowMusicCounter + 1
             if not LowMusic[LowMusicCounter] then
                 LowMusicCounter = 1
             end
-            testFilePath = LowMusic[LowMusicCounter]
+            NextTrack1 = LowMusic[LowMusicCounter]
+            NextTrack2 = LowMusic[LowMusicCounter+1]
+            MusicType = "lowintensity"
 
-        else
+        elseif Session.type == 3 then
 
             HighMusicCounter = HighMusicCounter + 1
             if not HighMusic[HighMusicCounter] then
                 HighMusicCounter = 1
             end
-            testFilePath = HighMusic[HighMusicCounter]
+            NextTrack1 = HighMusic[HighMusicCounter]
+            NextTrack2 = HighMusic[HighMusicCounter+1]
+            MusicType = "highintensity"
+
+        else
+
+            local random = math.random(1,4)
+            if EnablePracticePlaylist and random == 1 then
+
+                PracticeMusicCounter = PracticeMusicCounter + 1
+                if not PracticeMusic[PracticeMusicCounter] then
+                    PracticeMusicCounter = 1
+                end
+                NextTrack1 = PracticeMusic[PracticeMusicCounter]
+                NextTrack2 = PracticeMusic[PracticeMusicCounter+1]
+
+            elseif EnableQualifyingPlaylist and random <= 2 then
+
+                QualificationMusicCounter = QualificationMusicCounter + 1
+                if not QualificationMusic[QualificationMusicCounter] then
+                    QualificationMusicCounter = 1
+                end
+                NextTrack1 = QualificationMusic[QualificationMusicCounter]
+                NextTrack2 = QualificationMusic[QualificationMusicCounter+1]
+
+            elseif random <= 3 and HighIntensityThreshold > 0 then
+
+                LowMusicCounter = LowMusicCounter + 1
+                if not LowMusic[LowMusicCounter] then
+                    LowMusicCounter = 1
+                end
+                NextTrack1 = LowMusic[LowMusicCounter]
+                NextTrack2 = LowMusic[LowMusicCounter+1]
+
+            else
+
+                HighMusicCounter = HighMusicCounter + 1
+                if not HighMusic[HighMusicCounter] then
+                    HighMusicCounter = 1
+                end
+                NextTrack1 = HighMusic[HighMusicCounter]
+                NextTrack2 = HighMusic[HighMusicCounter+1]
+
+            end
+            MusicType = "other"
 
         end
-        MusicType = "other"
 
+        --ac.log("ReplayMusicCounter", ReplayMusicCounter)
+        --ac.log("FinishPodiumMusicCounter", FinishPodiumMusicCounter)
+        --ac.log("FinishMusicCounter", FinishMusicCounter)
+        --ac.log("WaitingMusicCounter", WaitingMusicCounter)
+        --ac.log("PracticeMusicCounter", PracticeMusicCounter)
+        --ac.log("QualificationMusicCounter", QualificationMusicCounter)
+        --ac.log("LowMusicCounter", LowMusicCounter)
+        --ac.log("HighMusicCounter", HighMusicCounter)
+
+        --FilePath = testFilePath[2]
+        --ac.log(testFilePath[1], FilePath)
+        --CurrentlyPlaying = testFilePath[1]
+
+        if (not NextTrack2) or attempts == 10 or (PlayedTracksDatabase:get("data", NextTrack1[1], 0) <= PlayedTracksDatabase:get("DATA", NextTrack2[1], 0)) then
+            TrackChoosen = true
+            FilePath = NextTrack1[2]
+            CurrentlyPlaying = NextTrack1[1]
+            PlayedTracksDatabase:set("data", NextTrack1[1], PlayedTracksDatabase:get("data", NextTrack1[1], 0)+1)
+            PlayedTracksDatabase:save()
+        end
+
+        if TrackChoosen and MusicType == "finish" then
+            PlayedFinishTrack = true
+        end
+
+        if TrackChoosen then
+            break
+        end
     end
-
-    --ac.log("ReplayMusicCounter", ReplayMusicCounter)
-    --ac.log("FinishPodiumMusicCounter", FinishPodiumMusicCounter)
-    --ac.log("FinishMusicCounter", FinishMusicCounter)
-    --ac.log("WaitingMusicCounter", WaitingMusicCounter)
-    --ac.log("PracticeMusicCounter", PracticeMusicCounter)
-    --ac.log("QualificationMusicCounter", QualificationMusicCounter)
-    --ac.log("LowMusicCounter", LowMusicCounter)
-    --ac.log("HighMusicCounter", HighMusicCounter)
-
-    FilePath = testFilePath[2]
-    --ac.log(testFilePath[1], FilePath)
-    CurrentlyPlaying = testFilePath[1]
 
     return FilePath
 end
@@ -1010,7 +1058,7 @@ function script.windowNowPlaying()
     ui.setColumnWidth(0, windowWidthRange*NowPlayingWidgetSize)
     ui.setColumnWidth(1, 10000)
     ui.beginOutline()
-    ui.pushDWriteFont('PoppinsMedium:\\Fonts;Weight=Medium')
+    ui.pushDWriteFont('Poppins:\\Fonts;Weight=Medium')
     ui.dwriteText("", math.floor(5*NowPlayingWidgetSize), rgbm(1, 1, 1, NowPlayingOpacityCurrent))
     
     local text1

@@ -1,3 +1,6 @@
+1.3
+- App now tracks how many times each of the tracks was played, storing the filenames. When picking the next song, it's comparing the playbacks amount between that one, and the one after it. If the one after it was played less, the track is skipped for the next one... HOWEVER if the one AFTER that has even less playbacks, it will choose that one... That goes up to 10 songs, so practically, this achieves 2 things. 1st, when you add new tracks to your playlists, they will be prioritized. 2nd, if you put some songs in multiple playlists, that will make them less likely to repeat more often than anything else!
+
 1.2
 - Fixed rare case that would prevent tracks from switching early and make you stuck with no music for a while. (Not a bug with my app, but i've set up a workaround)
 - Added new options for Now Playing widget: Animated icon (Default Enabled) and Fadeout after X seconds (Time is configurable, Default Disabled)
