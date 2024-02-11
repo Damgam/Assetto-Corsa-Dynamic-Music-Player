@@ -53,7 +53,6 @@ PodiumFinishTop25Percent = ConfigFile:get("settings", "podiumtop25", true) -- if
 
 ConfigMaxVolume = ConfigFile:get("settings", "volume", 0.8333) -- Volume relative to ingame Master volume value, percentage.
 ConfigMinTargetVolumeMultiplier = ConfigFile:get("settings", "minvolume", 0.4) -- How much can the volume be turned down by dynamic volume controllers. It's percentage of MaxVolume, not an absolute value.
-PauseVolumeMultiplier = 0.1 -- Music Volume modifier for when game is paused. It's percentage of MaxVolume, not an absolute value.
 ConfigFadeInSpeed = ConfigFile:get("settings", "fadein", 1) -- Percentage per 5 frames. too low might cause problems. Relative to ingame Master volume value.
 ConfigFadeOutSpeed = ConfigFile:get("settings", "fadeout", 1)-- Percentage per 5 frames. too low might cause problems. Relative to ingame Master volume value.
 
@@ -63,12 +62,18 @@ EnableDynamicSpeedVolume = ConfigFile:get("settings", "speedfadeout", true) -- t
 EnableDynamicCrashingVolume = ConfigFile:get("settings", "crashingfadeout", true) -- turn down music volume when you crash
 EnableDynamicCrashingTrackSkip = ConfigFile:get("settings", "crashingfadeouttrackskip", true) -- turn down music volume when you crash
 
+ConfigMinimumCautionVolume = ConfigFile:get("settings", "mincautionvolume", 0.2)
+ConfigMinimumProximityVolume = ConfigFile:get("settings", "minproximityvolume", 0.5)
+ConfigMinimumSpeedVolume = ConfigFile:get("settings", "minspeedvolume", 0.2)
+ConfigMinimumPauseVolume = ConfigFile:get("settings", "minpausevolume", 0.1)
+
 EnableNowPlayingIcon = ConfigFile:get("settings", "nowplayingicon", true)
 EnableAnimatedNowPlayingIcon = ConfigFile:get("settings", "nowplayinganimatedicon", true)
 EnableNowPlayingTime = ConfigFile:get("settings", "nowplayingtime", true)
 NowPlayingWidgetSize = ConfigFile:get("settings", "nowplayingscale", 1)
 EnableNowPlayingWidgetFadeout = ConfigFile:get("settings", "nowplayingfadeout", false)
 NowPlayingWidgetFadeoutTime = ConfigFile:get("settings", "nowplayingfadeouttime", 10)
+
 
 ExternalMusic = require('Music/ExternalMusicPaths')
 
@@ -204,7 +209,10 @@ NowPlayingOpacityTarget = 0
 function updateConfig()
     local MasterVolume = ac.getAudioVolume('main')
     MaxVolume = ConfigMaxVolume * MasterVolume
-    MinTargetVolumeMultiplier = ConfigMinTargetVolumeMultiplier
+    MinimumCautionVolume = ConfigMinimumCautionVolume
+    MinimumProximityVolume = ConfigMinimumProximityVolume
+    MinimumSpeedVolume = ConfigMinimumSpeedVolume
+    MinimumPauseVolume = ConfigMinimumPauseVolume
     HighIntensityThreshold = ConfigHighIntensityThreshold
     FadeInSpeed = 0.01 * ConfigFadeInSpeed * MasterVolume * MaxVolume
     FadeOutSpeed = 0.05 * ConfigFadeOutSpeed * MasterVolume * MaxVolume
@@ -315,23 +323,23 @@ function updateRaceStatusData()
     if PlayerFinished or MusicType == "waiting" then
         TargetVolumeMultiplier = 1
     elseif Sim.isPaused then
-        TargetVolumeMultiplier = PauseVolumeMultiplier
+        TargetVolumeMultiplier = MinimumPauseVolume
     elseif EnableDynamicCautionVolume and (Sim.raceFlagType == 2 or Sim.raceFlagType == 8 or Sim.raceFlagType == 12) then
-        TargetVolumeMultiplier = MinTargetVolumeMultiplier
+        TargetVolumeMultiplier = MinimumCautionVolume
     else
         local SpeedVolumeMultiplier
         local ProximityVolumeMultiplier
         if EnableDynamicSpeedVolume then
-            SpeedVolumeMultiplier = math.min(math.max(MinTargetVolumeMultiplier, PlayerCarSpeed/(math.ceil(AverageSpeed+TopSpeed)/2)), 1)
+            SpeedVolumeMultiplier = math.min(math.max(MinimumSpeedVolume, PlayerCarSpeed/(math.ceil(AverageSpeed+TopSpeed)/2)), 1)
         else
             SpeedVolumeMultiplier = 1
         end
         if EnableDynamicProximityVolume then
-            ProximityVolumeMultiplier = math.max( math.min(math.max(lowestDistX, lowestDistZ)/(PlayerCarSpeed*0.2), 1), MinTargetVolumeMultiplier)
+            ProximityVolumeMultiplier = math.max( math.min(math.max(lowestDistX, lowestDistZ)/(PlayerCarSpeed*0.2), 1), MinimumProximityVolume)
         else
             ProximityVolumeMultiplier = 1
         end
-        TargetVolumeMultiplier = math.max(math.min(SpeedVolumeMultiplier, ProximityVolumeMultiplier), MinTargetVolumeMultiplier)
+        TargetVolumeMultiplier = math.min(SpeedVolumeMultiplier, ProximityVolumeMultiplier)
     end
     
     if (not Session.isTimedRace) and Session.type == 3 then
@@ -732,7 +740,7 @@ function script.update(dt)
 end
 
 function TabsFunction()
-    ui.tabItem("Volume", {}, VolumeTab)
+    --ui.tabItem("Volume", {}, VolumeTab)
     ui.tabItem("Sessions", {}, SessionsTab)
     ui.tabItem("Behaviour", {}, BehaviourTab)
     ui.tabItem("NowPlaying Widget", {}, NowPlayingWidgetTab)
@@ -741,30 +749,9 @@ function TabsFunction()
     
 end
 
-function VolumeTab()
-    ui.text('Maximum Music Volume (Relative to Master volume)')
-    local sliderValue1 = ConfigMaxVolume
-    sliderValue1 = ui.slider("(Default 0.833) ##slider1", sliderValue1, 0, 1)
-    if ConfigMaxVolume ~= sliderValue1 then
-        ConfigMaxVolume = sliderValue1
-        ConfigFile:set("settings", "volume", sliderValue1)
-        NeedToSaveConfig = true
-    end
+-- function VolumeTab()
 
-    ui.separator()
-    ui.text('Minimum Music Volume (For dynamic adjustments)')
-    ui.text('#Percentage of Maximum Volume, not an absolute value.')
-    local sliderValue3 = ConfigMinTargetVolumeMultiplier
-    sliderValue3 = ui.slider("(Default 0.4) ##slider3", sliderValue3, 0, 1)
-    if ConfigMinTargetVolumeMultiplier ~= sliderValue3 then
-        ConfigMinTargetVolumeMultiplier = sliderValue3
-        ConfigFile:set("settings", "minvolume", sliderValue3)
-        NeedToSaveConfig = true
-    end
-    if ui.itemHovered() then
-        ui.setTooltip('The app is adjusting current volume based on a few events. This value defines how low the volume can drop relative to Max.')
-    end
-end
+-- end
 
 function SessionsTab()
     
@@ -855,6 +842,23 @@ function BehaviourTab()
         ui.setTooltip('Higher is faster. Completely disables fade-outs when maxed.')
     end
 
+    if true then
+        ui.separator()
+        ui.text('Minimum Pause Music Volume')
+        ui.text('#Percentage of Maximum Volume, not an absolute value.')
+        local sliderValue3d = ConfigMinimumPauseVolume
+        sliderValue3d = ui.slider("(Default 0.1) ##slider3d", sliderValue3d, 0, 1)
+        if ConfigMinimumPauseVolume ~= sliderValue3d then
+            ConfigMinimumPauseVolume = sliderValue3d
+            ConfigFile:set("settings", "minpausevolume", sliderValue3d)
+            NeedToSaveConfig = true
+        end
+        if ui.itemHovered() then
+            ui.setTooltip('The app is adjusting current volume based on a few events. This value defines how low the volume can drop relative to Max when the game is paused.')
+        end
+        ui.separator()
+    end
+
     checkbox = ui.checkbox("Enable caution flag volume fadeout", EnableDynamicCautionVolume)
     if ui.itemHovered() then
         ui.setTooltip('Volume will drop down when you are under yellow or blue flag. It will also drop when you get a slowdown penalty. It is intended to make you focused during cautious situations.')
@@ -863,6 +867,23 @@ function BehaviourTab()
         EnableDynamicCautionVolume = not EnableDynamicCautionVolume
         ConfigFile:set("settings", "cautionfadeout", EnableDynamicCautionVolume)
         NeedToSaveConfig = true
+    end
+
+    if EnableDynamicCautionVolume then
+        
+        ui.text('Minimum Caution Flag Music Volume')
+        ui.text('#Percentage of Maximum Volume, not an absolute value.')
+        local sliderValue3a = ConfigMinimumCautionVolume
+        sliderValue3a = ui.slider("(Default 0.2) ##slider3a", sliderValue3a, 0, 1)
+        if ConfigMinimumCautionVolume ~= sliderValue3a then
+            ConfigMinimumCautionVolume = sliderValue3a
+            ConfigFile:set("settings", "mincautionvolume", sliderValue3a)
+            NeedToSaveConfig = true
+        end
+        if ui.itemHovered() then
+            ui.setTooltip('The app is adjusting current volume based on a few events. This value defines how low the volume can drop relative to Max during caution flags.')
+        end
+        ui.separator()
     end
 
     checkbox = ui.checkbox("Enable opponent proximity volume fadeout", EnableDynamicProximityVolume)
@@ -875,6 +896,22 @@ function BehaviourTab()
         NeedToSaveConfig = true
     end
 
+    if EnableDynamicProximityVolume then
+        ui.text('Minimum Opponent Proximity Music Volume')
+        ui.text('#Percentage of Maximum Volume, not an absolute value.')
+        local sliderValue3b = ConfigMinimumProximityVolume
+        sliderValue3b = ui.slider("(Default 0.5) ##slider3b", sliderValue3b, 0, 1)
+        if ConfigMinimumProximityVolume ~= sliderValue3b then
+            ConfigMinimumProximityVolume = sliderValue3b
+            ConfigFile:set("settings", "minproximityvolume", sliderValue3b)
+            NeedToSaveConfig = true
+        end
+        if ui.itemHovered() then
+            ui.setTooltip('The app is adjusting current volume based on a few events. This value defines how low the volume can drop relative to Max when oppoents are nearby.')
+        end
+        ui.separator()
+    end
+
     checkbox = ui.checkbox("Enable low speed volume fadeout", EnableDynamicSpeedVolume)
     if ui.itemHovered() then
         ui.setTooltip('Volume will drop down when you drive slow. The app calibrates itself to your car and track combo after a few laps. Starting value is to use average speed of 200.')
@@ -883,6 +920,23 @@ function BehaviourTab()
         EnableDynamicSpeedVolume = not EnableDynamicSpeedVolume
         ConfigFile:set("settings", "speedfadeout", EnableDynamicSpeedVolume)
         NeedToSaveConfig = true
+    end
+
+    if EnableDynamicSpeedVolume then
+        
+        ui.text('Minimum Speed Music Volume')
+        ui.text('#Percentage of Maximum Volume, not an absolute value.')
+        local sliderValue3c = ConfigMinimumSpeedVolume
+        sliderValue3c = ui.slider("(Default 0.2) ##slider3c", sliderValue3c, 0, 1)
+        if ConfigMinimumSpeedVolume ~= sliderValue3c then
+            ConfigMinimumSpeedVolume = sliderValue3c
+            ConfigFile:set("settings", "minspeedvolume", sliderValue3c)
+            NeedToSaveConfig = true
+        end
+        if ui.itemHovered() then
+            ui.setTooltip('The app is adjusting current volume based on a few events. This value defines how low the volume can drop relative to Max when you are driving slow.')
+        end
+        ui.separator()
     end
 
     checkbox = ui.checkbox("Enable crashing volume fadeout", EnableDynamicCrashingVolume)
@@ -907,12 +961,15 @@ function BehaviourTab()
         end
     end
 
+    ui.separator()
+
     checkbox = ui.checkbox("Play Victory Music if finished in Top25%, otherwise play only if finished in Top3", PodiumFinishTop25Percent)
     if checkbox then
         PodiumFinishTop25Percent = not PodiumFinishTop25Percent
         ConfigFile:set("settings", "podiumtop25", PodiumFinishTop25Percent)
         NeedToSaveConfig = true
     end
+
 end
 
 function NowPlayingWidgetTab()
@@ -1003,6 +1060,13 @@ function script.windowMain()
         ConfigFile:set("settings", "appenabled", EnableMusic)
         NeedToSaveConfig = true
     end
+    local sliderValue1 = ConfigMaxVolume
+    sliderValue1 = ui.slider("Volume (Default 0.833) ##slider1", sliderValue1, 0, 1)
+    if ConfigMaxVolume ~= sliderValue1 then
+        ConfigMaxVolume = sliderValue1
+        ConfigFile:set("settings", "volume", sliderValue1)
+        NeedToSaveConfig = true
+    end
 
     ui.tabBar("Categories", {}, TabsFunction)
 
@@ -1071,8 +1135,8 @@ function script.windowNowPlaying()
     text2 = CurrentlyPlaying
     local windowWidth = math.max(ui.measureDWriteText(text1, 25*NowPlayingWidgetSize, -1).x, ui.measureDWriteText(text2, 25*NowPlayingWidgetSize, -1).x)
     local windowWidth = vec2(windowWidth)
-    ui.dwriteText(text1, 20*NowPlayingWidgetSize, rgbm(1, 1, 1, NowPlayingOpacityCurrent))
-    ui.dwriteText(text2, 25*NowPlayingWidgetSize, rgbm(1, 1, 1, NowPlayingOpacityCurrent))
+    ui.dwriteText(text1, 18*NowPlayingWidgetSize, rgbm(1, 1, 1, NowPlayingOpacityCurrent))
+    ui.dwriteText(text2, 21*NowPlayingWidgetSize, rgbm(1, 1, 1, NowPlayingOpacityCurrent))
     ui.endOutline(0, 1.5)
     ui.popDWriteFont()
 
