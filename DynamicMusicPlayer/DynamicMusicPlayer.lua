@@ -456,7 +456,7 @@ updateRaceStatusData()
 function getNewTrack()
     local PlayedTracksDatabase = ac.INIConfig.load(ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/" .. "data.ini")
 
-    for attempts = 1,10 do
+    for attempts = 1,100 do
         local NextTrack1
         local NextTrack2
         local TrackChoosen = false
@@ -599,7 +599,7 @@ function getNewTrack()
         --ac.log(testFilePath[1], FilePath)
         --CurrentlyPlaying = testFilePath[1]
 
-        if (not NextTrack2) or attempts == 10 or (PlayedTracksDatabase:get("data", NextTrack1[1], 0) <= PlayedTracksDatabase:get("DATA", NextTrack2[1], 0)) then
+        if (not NextTrack2) or (NextTrack2 and NextTrack2[1] ~= CurrentlyPlaying and (attempts == 10 or (PlayedTracksDatabase:get("data", NextTrack1[1], 0) <= PlayedTracksDatabase:get("data", NextTrack2[1], 0)))) then
             TrackChoosen = true
             FilePath = NextTrack1[2]
             CurrentlyPlaying = NextTrack1[1]
