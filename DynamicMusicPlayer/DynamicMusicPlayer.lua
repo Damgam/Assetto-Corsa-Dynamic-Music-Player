@@ -36,17 +36,36 @@ function string_formatTime(seconds)
     end
 end
 
+function scalePercentage(x, minVolume)
+    return minVolume + x * (1 - minVolume)
+end
+
+------
+local gcSmooth = 0
+local gcRuns = 0
+local gcLast = 0
+local function runGC()
+    local before = collectgarbage('count')
+    collectgarbage()
+    gcSmooth = math.applyLag(gcSmooth, before - collectgarbage('count'), gcRuns < 50 and 0.9 or 0.995, 0.05)
+    gcRuns = gcRuns + 1
+    gcLast = math.floor(gcSmooth * 100) / 100
+end
+
+local function printGC()
+ac.debug("Runtime | collectgarbage", gcLast .. " KB")
+end
+------
+
 ConfigFile = ac.INIConfig.load(ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/" .. "settings.ini")
 
 -- Config
-EnableMusic = ConfigFile:get("settings", "appenabled", 1)
-
-ConfigHighIntensityThreshold = ConfigFile:get("settings", "highintensitythreshold", 0.60) -- Low and High Intensity switch level. Scale 0 to 1
+EnableMusic = ConfigFile:get("settings", "appenabled", true)
 
 EnablePracticePlaylist = ConfigFile:get("settings", "practiceenabled", true) -- Enable Practice mode playlist, otherwise use Race music
 EnableQualifyingPlaylist = ConfigFile:get("settings", "qualifyingenabled", true) -- Enable Qualification mode playlist, otherwise use Race music
-EnableIdlePlaylist = ConfigFile:get("settings", "idleenabled", true) -- Enable Waiting mode playlist
-EnableIdlePlaylistOutsidePits = ConfigFile:get("settings", "idleoutsidepits", true) -- Enable Waiting mode playlist outside of pits (if the car is standing in place)
+EnableIdlePlaylist = ConfigFile:get("settings", "idleenabled", true) -- Enable Idle mode playlist
+EnableIdlePlaylistOutsidePits = ConfigFile:get("settings", "idleoutsidepits", true) -- Enable Idle mode playlist outside of pits (if the car is standing in place)
 EnableFinishPlaylist = ConfigFile:get("settings", "finishenabled", true) -- Enable Finish mode playlist
 EnableReplayPlaylist = ConfigFile:get("settings", "replayenabled", true) -- Enable Replay mode playlist
 PodiumFinishTop25Percent = ConfigFile:get("settings", "podiumtop25", true) -- if true, podium music plays if you end up in top 25%, if false, plays when you end up in the podium. // Apparently Finish music is broken in Online, yay!
@@ -60,50 +79,50 @@ EnableDynamicCautionVolume = ConfigFile:get("settings", "cautionfadeout", true) 
 EnableDynamicProximityVolume = ConfigFile:get("settings", "proximityfadeout", true) -- turn down music volume when opponents are nearby
 EnableDynamicSpeedVolume = ConfigFile:get("settings", "speedfadeout", true) -- turn down music volume depending on speed of your car
 EnableDynamicCrashingVolume = ConfigFile:get("settings", "crashingfadeout", true) -- turn down music volume when you crash
-EnableDynamicCrashingTrackSkip = ConfigFile:get("settings", "crashingfadeouttrackskip", true) -- turn down music volume when you crash
+EnableDynamicCrashingTrackSkip = ConfigFile:get("settings", "crashingfadeouttrackskip", false) -- turn down music volume when you crash
 
-ConfigMinimumCautionVolume = ConfigFile:get("settings", "mincautionvolume", 0.2)
+ConfigMinimumCautionVolume = ConfigFile:get("settings", "mincautionvolume", 0.1)
 ConfigMinimumProximityVolume = ConfigFile:get("settings", "minproximityvolume", 0.5)
-ConfigMinimumSpeedVolume = ConfigFile:get("settings", "minspeedvolume", 0.2)
+ConfigMinimumSpeedVolume = ConfigFile:get("settings", "minspeedvolume", 0.5)
 ConfigMinimumPauseVolume = ConfigFile:get("settings", "minpausevolume", 0.1)
 
 EnableNowPlayingIcon = ConfigFile:get("settings", "nowplayingicon", true)
 EnableAnimatedNowPlayingIcon = ConfigFile:get("settings", "nowplayinganimatedicon", true)
 EnableNowPlayingTime = ConfigFile:get("settings", "nowplayingtime", true)
 NowPlayingWidgetSize = ConfigFile:get("settings", "nowplayingscale", 1)
-EnableNowPlayingWidgetFadeout = ConfigFile:get("settings", "nowplayingfadeout", false)
+EnableNowPlayingWidgetFadeout = ConfigFile:get("settings", "nowplayingfadeout", true)
 NowPlayingWidgetFadeoutTime = ConfigFile:get("settings", "nowplayingfadeouttime", 10)
 
 
 ExternalMusic = require('Music/ExternalMusicPaths')
 
-LowDir = '/Music/LowIntensity'
-LowMusic = table.map(io.scanDir( __dirname .. LowDir, '*'), function (x) return { string.sub(x, 1, #x - 4), LowDir .. '/' .. x } end)
-if ExternalMusic and ExternalMusic.LowIntensity and ExternalMusic.LowIntensity[1] then
-    for i = 1,#ExternalMusic.LowIntensity do
-        local table = table.map(io.scanDir( ExternalMusic.LowIntensity[i], '*'), function (x) return { string.sub(x, 1, #x - 4), ExternalMusic.LowIntensity[i] .. '/' .. x } end)
-        table_append(LowMusic, table)
+OtherDir = '/Music/Other'
+OtherMusic = table.map(io.scanDir( __dirname .. OtherDir, '*'), function (x) return { string.sub(x, 1, #x - 4), OtherDir .. '/' .. x } end)
+if ExternalMusic and ExternalMusic.Other and ExternalMusic.Other[1] then
+    for i = 1,#ExternalMusic.Other do
+        local table = table.map(io.scanDir( ExternalMusic.Other[i], '*'), function (x) return { string.sub(x, 1, #x - 4), ExternalMusic.Other[i] .. '/' .. x } end)
+        table_append(OtherMusic, table)
     end
 end
-LowMusicCounter = 0
-table.shuffle(LowMusic)
+OtherMusicCounter = 0
+table.shuffle(OtherMusic)
 
-HighDir = '/Music/HighIntensity'
-HighMusic = table.map(io.scanDir( __dirname .. HighDir, '*'), function (x) return { string.sub(x, 1, #x - 4), HighDir .. '/' .. x } end)
-if ExternalMusic and ExternalMusic.HighIntensity and ExternalMusic.HighIntensity[1] then
-    for i = 1,#ExternalMusic.HighIntensity do
-        local table = table.map(io.scanDir( ExternalMusic.HighIntensity[i], '*'), function (x) return { string.sub(x, 1, #x - 4), ExternalMusic.HighIntensity[i] .. '/' .. x } end)
-        table_append(HighMusic, table)
+RaceDir = '/Music/Race'
+RaceMusic = table.map(io.scanDir( __dirname .. RaceDir, '*'), function (x) return { string.sub(x, 1, #x - 4), RaceDir .. '/' .. x } end)
+if ExternalMusic and ExternalMusic.Race and ExternalMusic.Race[1] then
+    for i = 1,#ExternalMusic.Race do
+        local table = table.map(io.scanDir( ExternalMusic.Race[i], '*'), function (x) return { string.sub(x, 1, #x - 4), ExternalMusic.Race[i] .. '/' .. x } end)
+        table_append(RaceMusic, table)
     end
 end
-HighMusicCounter = 0
-table.shuffle(HighMusic)
+RaceMusicCounter = 0
+table.shuffle(RaceMusic)
 
-FinishDir = '/Music/FinishLose'
+FinishDir = '/Music/Finish'
 FinishMusic = table.map(io.scanDir( __dirname .. FinishDir, '*'), function (x) return { string.sub(x, 1, #x - 4), FinishDir .. '/' .. x } end)
-if ExternalMusic and ExternalMusic.FinishLose and ExternalMusic.FinishLose[1] then
-    for i = 1,#ExternalMusic.FinishLose do
-        local table = table.map(io.scanDir( ExternalMusic.FinishLose[i], '*'), function (x) return { string.sub(x, 1, #x - 4), ExternalMusic.FinishLose[i] .. '/' .. x } end)
+if ExternalMusic and ExternalMusic.Finish and ExternalMusic.Finish[1] then
+    for i = 1,#ExternalMusic.Finish do
+        local table = table.map(io.scanDir( ExternalMusic.Finish[i], '*'), function (x) return { string.sub(x, 1, #x - 4), ExternalMusic.Finish[i] .. '/' .. x } end)
         table_append(FinishMusic, table)
     end
 end
@@ -154,16 +173,16 @@ end
 QualificationMusicCounter = 0
 table.shuffle(QualificationMusic)
 
-WaitingDir = '/Music/Waiting'
-WaitingMusic = table.map(io.scanDir( __dirname .. WaitingDir, '*'), function (x) return { string.sub(x, 1, #x - 4), WaitingDir .. '/' .. x } end)
-if ExternalMusic and ExternalMusic.Waiting and ExternalMusic.Waiting[1] then
-    for i = 1,#ExternalMusic.Waiting do
-        local table = table.map(io.scanDir( ExternalMusic.Waiting[i], '*'), function (x) return { string.sub(x, 1, #x - 4), ExternalMusic.Waiting[i] .. '/' .. x } end)
-        table_append(WaitingMusic, table)
+IdleDir = '/Music/Idle'
+IdleMusic = table.map(io.scanDir( __dirname .. IdleDir, '*'), function (x) return { string.sub(x, 1, #x - 4), IdleDir .. '/' .. x } end)
+if ExternalMusic and ExternalMusic.Idle and ExternalMusic.Idle[1] then
+    for i = 1,#ExternalMusic.Idle do
+        local table = table.map(io.scanDir( ExternalMusic.Idle[i], '*'), function (x) return { string.sub(x, 1, #x - 4), ExternalMusic.Idle[i] .. '/' .. x } end)
+        table_append(IdleMusic, table)
     end
 end
-WaitingMusicCounter = 0
-table.shuffle(WaitingMusic)
+IdleMusicCounter = 0
+table.shuffle(IdleMusic)
 
 
 TargetVolume = -10
@@ -173,7 +192,6 @@ IntensityLevel = 0
 IdleTimer = 10
 HitValue = 0
 HitSpeedLast = 0
-IntensityLevel = 0
 FadeInSpeedMultiplier = 1
 FadeOutSpeedMultiplier = 1
 
@@ -191,6 +209,7 @@ PlayerFinished              = false
 PlayerBestLapTime           = 180
 AverageSpeed                = 100
 TopSpeed                    = 0
+CautionVolume               = 1
 
 NowPlayingBars = {
     [1] = {current = math.random(0,128)/128, target = math.random(0,128)/128},
@@ -213,9 +232,8 @@ function updateConfig()
     MinimumProximityVolume = ConfigMinimumProximityVolume
     MinimumSpeedVolume = ConfigMinimumSpeedVolume
     MinimumPauseVolume = ConfigMinimumPauseVolume
-    HighIntensityThreshold = ConfigHighIntensityThreshold
-    FadeInSpeed = 0.01 * ConfigFadeInSpeed * MasterVolume * MaxVolume
-    FadeOutSpeed = 0.05 * ConfigFadeOutSpeed * MasterVolume * MaxVolume
+    FadeInSpeed = 0.01 * ConfigFadeInSpeed * (1-MasterVolume) * MaxVolume
+    FadeOutSpeed = 0.05 * ConfigFadeOutSpeed * (1-MasterVolume) * MaxVolume
 end
 updateConfig()
 
@@ -265,29 +283,9 @@ function updateRaceStatusData()
         end
         SessionSwitched = true
     end
+
     previousSessionStartTimer = Sim.timeToSessionStart
 
-    IntensityBooster = 0
-    if CarsInRace > 1 then
-        PositionIntensity = (-((PlayerCarRacePosition - 1)/(CarsInRace - 1)))+1
-        if PlayerCarRacePosition == 1 then
-            IntensityBooster = 1
-        elseif PlayerCarRacePosition == 2 then
-            IntensityBooster = 0.5
-        elseif PlayerCarRacePosition == 3 then
-            IntensityBooster = 0.3
-        elseif PlayerCarRacePosition == 4 then
-            IntensityBooster = 0.2
-        elseif PlayerCarRacePosition == 5 then
-            IntensityBooster = 0.1
-        end
-    else
-        PositionIntensity = 1
-    end
-    TimeIntensity = math.min(1, (-((Sim.sessionTimeLeft/1000/60)/(Session.durationMinutes)))+1)
-    LapIntensity = (Car.sessionLapCount+1)/Session.laps
-    AverageSpeedIntensity = math.max(0, math.min(((AverageSpeed-100)/150), 1))
-    TopSpeedIntensity = math.max(0, math.min(((TopSpeed-150)/150), 1))
     if Car.sessionLapCount > 0 then
         PlayerBestLapTime = math.max(120, math.ceil(Car.bestLapTimeMs/1000)) -- seconds
         --ac.log("BestLapTime", PlayerBestLapTime)
@@ -301,6 +299,7 @@ function updateRaceStatusData()
     PlayerCarPos = ac.getCar(Car.index).position
     local lowestDistX = 99999
     local lowestDistZ = 99999
+    local lowestDist = 99999
     for i = 1,CarsInRace do
         
         local CarIndex = Session.leaderboard[i-1].car.index
@@ -315,39 +314,61 @@ function updateRaceStatusData()
                     local distZ = math.abs(PlayerCarPos.z - CarPos.z)
                     if distX < lowestDistX then lowestDistX = distX end
                     if distZ < lowestDistZ then lowestDistZ = distZ end
+                    lowestDist = math.min(lowestDist, lowestDistX, lowestDistZ)
                 end
             end
-        end
+        end 
     end
 
-    if PlayerFinished or MusicType == "waiting" then
+    if PlayerFinished or MusicType == "idle" then
         TargetVolumeMultiplier = 1
     elseif Sim.isPaused then
         TargetVolumeMultiplier = MinimumPauseVolume
-    elseif EnableDynamicCautionVolume and (Sim.raceFlagType == 2 or Sim.raceFlagType == 8 or Sim.raceFlagType == 12) then
-        TargetVolumeMultiplier = MinimumCautionVolume
     else
-        local SpeedVolumeMultiplier
-        local ProximityVolumeMultiplier
+        TargetVolumeMultiplier = 1
+
+        local SpeedVolumeMultiplier = 1
+        local ProximityVolumeMultiplier = 1
+        local CautionVolumeMultiplier = 1
+        local CrashingVolumeMultiplier = 1
+
         if EnableDynamicSpeedVolume then
-            SpeedVolumeMultiplier = math.min(math.max(MinimumSpeedVolume, PlayerCarSpeed/(math.ceil(AverageSpeed+TopSpeed)/2)), 1)
+            local x = math.min(math.max(0, PlayerCarSpeed/(math.ceil(AverageSpeed+TopSpeed)/2)), 1)
+            SpeedVolumeMultiplier = scalePercentage(x, MinimumSpeedVolume)
+            --ac.log("SpeedVolumeMultiplier", SpeedVolumeMultiplier)
         else
             SpeedVolumeMultiplier = 1
         end
+
         if EnableDynamicProximityVolume then
-            ProximityVolumeMultiplier = math.max( math.min(math.max(lowestDistX, lowestDistZ)/(PlayerCarSpeed*0.2), 1), MinimumProximityVolume)
+            local x = math.max(math.min(lowestDist/(PlayerCarSpeed*0.1), 1), 0)
+            ProximityVolumeMultiplier = scalePercentage(x, MinimumProximityVolume)
         else
             ProximityVolumeMultiplier = 1
         end
-        TargetVolumeMultiplier = math.min(SpeedVolumeMultiplier, ProximityVolumeMultiplier)
+
+        if EnableDynamicCrashingVolume and HitValue > 0.01 then
+            if PlayerCarSpeed < 5 and EnableDynamicCrashingTrackSkip then
+                TrackSwitched = true
+            end
+            CrashingVolumeMultiplier = CrashingVolumeMultiplier - HitValue
+        end
+
+        if EnableDynamicCautionVolume and (Sim.raceFlagType == 2 or Sim.raceFlagType == 8 or Sim.raceFlagType == 12) and CautionVolume > MinimumCautionVolume then
+            CautionVolumeMultiplier = math.max(CautionVolume - (MinimumCautionVolume*0.2), MinimumCautionVolume)
+            CautionVolume = math.max(CautionVolume - (MinimumCautionVolume*0.1), MinimumCautionVolume)
+        elseif EnableDynamicCautionVolume and CautionVolume < 1 then
+            CautionVolumeMultiplier = math.min(CautionVolume + (MinimumCautionVolume*0.4), 1)
+            CautionVolume = math.min(CautionVolume + (MinimumCautionVolume*0.2), 1)
+        end
+        --ac.log(CautionVolumeMultiplier)
+        TargetVolumeMultiplier = TargetVolumeMultiplier * SpeedVolumeMultiplier * ProximityVolumeMultiplier * CrashingVolumeMultiplier * CautionVolumeMultiplier
     end
+
+    TimeIntensity = math.min(1, (-((Sim.sessionTimeLeft/1000/60)/(Session.durationMinutes)))+1)
+    LapIntensity = (Car.sessionLapCount+1)/Session.laps
     
     if (not Session.isTimedRace) and Session.type == 3 then
-        if (not Sim.isOnlineRace) or CSPBuild >= 2715 then -- Positioning is broken online right now so only use lap count -- Fixed in CSP 0.2.1 Preview56
-            IntensityLevel = math.min(1, ((PositionIntensity+LapIntensity+AverageSpeedIntensity+TopSpeedIntensity)/4) + IntensityBooster)
-        else
-            IntensityLevel = (LapIntensity+AverageSpeedIntensity+TopSpeedIntensity)/3
-        end
 
         if LapIntensity > 0.97 then -- boost the volume a little near the end of the race
             TargetVolumeMultiplier = math.min(TargetVolumeMultiplier + TargetVolumeMultiplier*0.20, 1)
@@ -355,15 +376,21 @@ function updateRaceStatusData()
             TargetVolumeMultiplier = math.min(TargetVolumeMultiplier + TargetVolumeMultiplier*0.15, 1)
         elseif LapIntensity > 0.93 then
             TargetVolumeMultiplier = math.min(TargetVolumeMultiplier + TargetVolumeMultiplier*0.10, 1)
+        elseif LapIntensity > 0.91 then
+            TargetVolumeMultiplier = math.min(TargetVolumeMultiplier + TargetVolumeMultiplier*0.05, 1)
         end
+
+        if LapIntensity < 0.03 then -- boost the volume a little at the start of the race
+            TargetVolumeMultiplier = math.min(TargetVolumeMultiplier + TargetVolumeMultiplier*0.20, 1)
+        elseif LapIntensity < 0.05 then
+            TargetVolumeMultiplier = math.min(TargetVolumeMultiplier + TargetVolumeMultiplier*0.15, 1)
+        elseif LapIntensity < 0.07 then
+            TargetVolumeMultiplier = math.min(TargetVolumeMultiplier + TargetVolumeMultiplier*0.10, 1)
+        elseif LapIntensity < 0.09 then
+            TargetVolumeMultiplier = math.min(TargetVolumeMultiplier + TargetVolumeMultiplier*0.05, 1)
+        end
+
     elseif Session.type == 3 then
-        if (not Sim.isOnlineRace) or CSPBuild >= 2715 then -- Positioning is broken online right now so only use timer -- Fixed in CSP 0.2.1 Preview56
-            --ac.log("posint", PositionIntensity)
-            --ac.log("time", TimeIntensity)
-            IntensityLevel = math.min(1, ((PositionIntensity+TimeIntensity+AverageSpeedIntensity+TopSpeedIntensity)/4) + IntensityBooster)
-        else
-            IntensityLevel = (TimeIntensity+AverageSpeedIntensity+TopSpeedIntensity)/3
-        end
 
         if TimeIntensity > 0.97 then -- boost the volume a little near the end of the race
             TargetVolumeMultiplier = math.min(TargetVolumeMultiplier + TargetVolumeMultiplier*0.20, 1)
@@ -371,40 +398,41 @@ function updateRaceStatusData()
             TargetVolumeMultiplier = math.min(TargetVolumeMultiplier + TargetVolumeMultiplier*0.15, 1)
         elseif TimeIntensity > 0.93 then
             TargetVolumeMultiplier = math.min(TargetVolumeMultiplier + TargetVolumeMultiplier*0.10, 1)
+        elseif TimeIntensity > 0.91 then
+            TargetVolumeMultiplier = math.min(TargetVolumeMultiplier + TargetVolumeMultiplier*0.05, 1)
+        end
+
+        if TimeIntensity < 0.03 then -- boost the volume a little at the start of the race
+            TargetVolumeMultiplier = math.min(TargetVolumeMultiplier + TargetVolumeMultiplier*0.20, 1)
+        elseif TimeIntensity < 0.05 then
+            TargetVolumeMultiplier = math.min(TargetVolumeMultiplier + TargetVolumeMultiplier*0.15, 1)
+        elseif TimeIntensity < 0.07 then
+            TargetVolumeMultiplier = math.min(TargetVolumeMultiplier + TargetVolumeMultiplier*0.10, 1)
+        elseif TimeIntensity < 0.09 then
+            TargetVolumeMultiplier = math.min(TargetVolumeMultiplier + TargetVolumeMultiplier*0.05, 1)
         end
     end
     
-    if ((not Sim.isOnlineRace) or CSPBuild >= 2715) and Session.type == 3 then-- Positions are currently broken in online so lets only use this feature in offline for now -- Fixed in CSP 0.2.1 Preview56
+    if ((not Sim.isOnlineRace) or CSPBuild >= 2715) and Session.type == 3 then -- Positions are broken in online on CSP 0.2.0 and below, so we only enable this feature on the recent versions
         if PlayerCarRacePosition == 1 then -- boost the volume a little when player is doing well
             TargetVolumeMultiplier = math.min(TargetVolumeMultiplier + TargetVolumeMultiplier*0.20, 1)
         elseif PlayerCarRacePosition <= 3 then
             TargetVolumeMultiplier = math.min(TargetVolumeMultiplier + TargetVolumeMultiplier*0.15, 1)
         elseif PlayerCarRacePosition <= 5 then
             TargetVolumeMultiplier = math.min(TargetVolumeMultiplier + TargetVolumeMultiplier*0.10, 1)
-        end
-    end
-
-    if EnableDynamicCrashingVolume and HitValue > 0.01 then
-        if PlayerCarSpeed < 30 then
-            TargetVolumeMultiplier = 0
-            if EnableDynamicCrashingTrackSkip then
-                TrackSwitched = true
-            end
-        else
-            TargetVolumeMultiplier = math.min(1, math.max(0, TargetVolumeMultiplier * (1-HitValue)))
+        elseif PlayerCarRacePosition <= 7 then
+            TargetVolumeMultiplier = math.min(TargetVolumeMultiplier + TargetVolumeMultiplier*0.05, 1)
         end
     end
 
     if MusicType and (
     (MusicType  == "replay" and (not Sim.isReplayActive) and EnableReplayPlaylist) or -- We're not in replay but replay music is playing
     (MusicType  ~= "replay" and Sim.isReplayActive and EnableReplayPlaylist) or -- We're in replay but replay music is not playing
-    (MusicType  == "waiting" and PlayerCarSpeed >= 1 and (not (Car.isInPitlane or Car.isInPit))) or -- Idle Music is playing but we're moving
-    (MusicType  ~= "waiting" and ((PlayerCarSpeed < 1 and IdleTimer > 10) or Car.isInPitlane or Car.isInPit) and MusicType  ~= "finish" and MusicType  ~= "replay" and EnableIdlePlaylist) or -- We're Idle but non-idle music is playing, just make sure it's not playing finish music.
+    (MusicType  == "idle" and PlayerCarSpeed >= 1 and (not (Car.isInPitlane or Car.isInPit))) or -- Idle Music is playing but we're moving
+    (MusicType  ~= "idle" and ((PlayerCarSpeed < 1 and IdleTimer > 10) or Car.isInPitlane or Car.isInPit) and MusicType  ~= "finish" and MusicType  ~= "replay" and EnableIdlePlaylist and IdleMusic[1]) or -- We're Idle but non-idle music is playing, just make sure it's not playing finish music.
     (MusicType  == "practice" and Session.type ~= 1) or -- Practice music is playing but we're not in practice
     (MusicType  == "quali" and Session.type ~= 2) or -- Qualification music is playing but we're not in qualis
-    ((MusicType == "lowintensity" or MusicType == "highintensity") and Session.type ~= 3) or -- Race music is playing but we're not in race
-    (MusicType  == "lowintensity" and IntensityLevel > HighIntensityThreshold*1.1) or -- Low intensity music is playing but it should be playing high instead
-    (MusicType  == "highintensity" and IntensityLevel < HighIntensityThreshold*0.9) or -- High intensity music is playing but it should be playing low instead
+    (MusicType  == "race" and Session.type ~= 3) or -- Race music is playing but we're not in race
     (MusicType  ~= "finish" and PlayerFinished and (not PlayedFinishTrack)) or -- We finished the race
     (EnableMusic == false) or -- We toggled off the music, turn it off
     (SessionSwitched or TrackSwitched) or -- Session has switched so we should play new track
@@ -423,11 +451,7 @@ function updateRaceStatusData()
         FadeInSpeedMultiplier = 1
     end
 
-    if MusicType and ( -- boost fade-out music 
-    (MusicType ~= "finish" and PlayerFinished) or
-    TrackSwitched or
-    (HitValue > 0.01 and PlayerCarSpeed < 30)
-    ) then
+    if MusicType and ((MusicType ~= "finish" and PlayerFinished) or TrackSwitched) then
         FadeOutSpeedMultiplier = 10
     elseif SessionSwitched then
         FadeOutSpeedMultiplier = 2/ConfigFadeOutSpeed
@@ -449,7 +473,6 @@ function updateRaceStatusData()
         end
     end
 
-    
 end
 updateRaceStatusData()
 
@@ -463,141 +486,127 @@ function getNewTrack()
 
         if Sim.isReplayActive and EnableReplayPlaylist then
 
-            ReplayMusicCounter = ReplayMusicCounter + 1
-            if not ReplayMusic[ReplayMusicCounter] then
-                ReplayMusicCounter = 1
+            if ReplayMusic[1] then
+                ReplayMusicCounter = ReplayMusicCounter + 1
+                if not ReplayMusic[ReplayMusicCounter] then
+                    ReplayMusicCounter = 1
+                end
+
+                NextTrack1 = ReplayMusic[ReplayMusicCounter]
+                NextTrack2 = ReplayMusic[ReplayMusicCounter+1]
+            else
+                OtherMusicCounter = OtherMusicCounter + 1
+                if not OtherMusic[OtherMusicCounter] then
+                    OtherMusicCounter = 1
+                end
+                NextTrack1 = OtherMusic[OtherMusicCounter]
+                NextTrack2 = OtherMusic[OtherMusicCounter+1]
             end
-
-            NextTrack1 = ReplayMusic[ReplayMusicCounter]
-            NextTrack2 = ReplayMusic[ReplayMusicCounter+1]
-
             MusicType = "replay"
 
-        elseif PlayerFinished and (not PlayedFinishTrack) then
+        elseif PlayerFinished and (not PlayedFinishTrack) and FinishMusic[1] then
 
-            if ((not PodiumFinishTop25Percent) and PlayerCarRacePosition <= 3 and PlayerCarRacePosition ~= CarsInRace) or (PodiumFinishTop25Percent and PlayerCarRacePosition <= CarsInRace*0.25) then
+            if ((not PodiumFinishTop25Percent) and PlayerCarRacePosition <= 3 and PlayerCarRacePosition ~= CarsInRace) or (PodiumFinishTop25Percent and PlayerCarRacePosition <= CarsInRace*0.25) and FinishPodiumMusic[1] then
                 FinishPodiumMusicCounter = FinishPodiumMusicCounter + 1
                 if not FinishPodiumMusic[FinishPodiumMusicCounter] then
                     FinishPodiumMusicCounter = 1
                 end
                 NextTrack1 = FinishPodiumMusic[FinishPodiumMusicCounter]
                 NextTrack2 = FinishPodiumMusic[FinishPodiumMusicCounter+1]
-            else
+            elseif FinishMusic[1] then
                 FinishMusicCounter = FinishMusicCounter + 1
                 if not FinishMusic[FinishMusicCounter] then
                     FinishMusicCounter = 1
                 end
                 NextTrack1 = FinishMusic[FinishMusicCounter]
                 NextTrack2 = FinishMusic[FinishMusicCounter+1]
+            else
+                OtherMusicCounter = OtherMusicCounter + 1
+                if not OtherMusic[OtherMusicCounter] then
+                    OtherMusicCounter = 1
+                end
+                NextTrack1 = OtherMusic[OtherMusicCounter]
+                NextTrack2 = OtherMusic[OtherMusicCounter+1]
             end
             MusicType = "finish"
 
-        elseif ((PlayerCarSpeed < 1 and IdleTimer > 10) or Car.isInPitlane or Car.isInPit) and EnableIdlePlaylist then
+        elseif ((PlayerCarSpeed < 1 and IdleTimer > 10) or Car.isInPitlane or Car.isInPit) and EnableIdlePlaylist and IdleMusic[1] then
 
-            WaitingMusicCounter = WaitingMusicCounter + 1
-            if not WaitingMusic[WaitingMusicCounter] then
-                WaitingMusicCounter = 1
+            IdleMusicCounter = IdleMusicCounter + 1
+            if not IdleMusic[IdleMusicCounter] then
+                IdleMusicCounter = 1
             end
-            NextTrack1 = WaitingMusic[WaitingMusicCounter]
-            NextTrack2 = WaitingMusic[WaitingMusicCounter+1]
-            MusicType = "waiting"
+            NextTrack1 = IdleMusic[IdleMusicCounter]
+            NextTrack2 = IdleMusic[IdleMusicCounter+1]
+            MusicType = "idle"
 
         elseif (EnablePracticePlaylist and Session.type == 1) then
-
-            PracticeMusicCounter = PracticeMusicCounter + 1
-            if not PracticeMusic[PracticeMusicCounter] then
-                PracticeMusicCounter = 1
-            end
-            NextTrack1 = PracticeMusic[PracticeMusicCounter]
-            NextTrack2 = PracticeMusic[PracticeMusicCounter+1]
-            MusicType = "practice"
-
-        elseif (EnableQualifyingPlaylist and Session.type == 2) then
-
-            QualificationMusicCounter = QualificationMusicCounter + 1
-            if not QualificationMusic[QualificationMusicCounter] then
-                QualificationMusicCounter = 1
-            end
-            NextTrack1 = QualificationMusic[QualificationMusicCounter]
-            NextTrack2 = QualificationMusic[QualificationMusicCounter+1]
-            MusicType = "quali"
-
-        elseif Session.type == 3 and IntensityLevel < HighIntensityThreshold then
-
-            LowMusicCounter = LowMusicCounter + 1
-            if not LowMusic[LowMusicCounter] then
-                LowMusicCounter = 1
-            end
-            NextTrack1 = LowMusic[LowMusicCounter]
-            NextTrack2 = LowMusic[LowMusicCounter+1]
-            MusicType = "lowintensity"
-
-        elseif Session.type == 3 then
-
-            HighMusicCounter = HighMusicCounter + 1
-            if not HighMusic[HighMusicCounter] then
-                HighMusicCounter = 1
-            end
-            NextTrack1 = HighMusic[HighMusicCounter]
-            NextTrack2 = HighMusic[HighMusicCounter+1]
-            MusicType = "highintensity"
-
-        else
-
-            local random = math.random(1,4)
-            if EnablePracticePlaylist and random == 1 then
-
+            if PracticeMusic[1] then
                 PracticeMusicCounter = PracticeMusicCounter + 1
                 if not PracticeMusic[PracticeMusicCounter] then
                     PracticeMusicCounter = 1
                 end
                 NextTrack1 = PracticeMusic[PracticeMusicCounter]
                 NextTrack2 = PracticeMusic[PracticeMusicCounter+1]
+            else
+                OtherMusicCounter = OtherMusicCounter + 1
+                if not OtherMusic[OtherMusicCounter] then
+                    OtherMusicCounter = 1
+                end
+                NextTrack1 = OtherMusic[OtherMusicCounter]
+                NextTrack2 = OtherMusic[OtherMusicCounter+1]
+            end
+            MusicType = "practice"
 
-            elseif EnableQualifyingPlaylist and random <= 2 then
+        elseif (EnableQualifyingPlaylist and Session.type == 2) then
 
+            if QualificationMusic[1] then
                 QualificationMusicCounter = QualificationMusicCounter + 1
                 if not QualificationMusic[QualificationMusicCounter] then
                     QualificationMusicCounter = 1
                 end
                 NextTrack1 = QualificationMusic[QualificationMusicCounter]
                 NextTrack2 = QualificationMusic[QualificationMusicCounter+1]
-
-            elseif random <= 3 and HighIntensityThreshold > 0 then
-
-                LowMusicCounter = LowMusicCounter + 1
-                if not LowMusic[LowMusicCounter] then
-                    LowMusicCounter = 1
-                end
-                NextTrack1 = LowMusic[LowMusicCounter]
-                NextTrack2 = LowMusic[LowMusicCounter+1]
-
             else
-
-                HighMusicCounter = HighMusicCounter + 1
-                if not HighMusic[HighMusicCounter] then
-                    HighMusicCounter = 1
+                OtherMusicCounter = OtherMusicCounter + 1
+                if not OtherMusic[OtherMusicCounter] then
+                    OtherMusicCounter = 1
                 end
-                NextTrack1 = HighMusic[HighMusicCounter]
-                NextTrack2 = HighMusic[HighMusicCounter+1]
-
+                NextTrack1 = OtherMusic[OtherMusicCounter]
+                NextTrack2 = OtherMusic[OtherMusicCounter+1]
             end
+            MusicType = "quali"
+
+        elseif Session.type == 3 then
+
+            if RaceMusic[1] then
+                RaceMusicCounter = RaceMusicCounter + 1
+                if not RaceMusic[RaceMusicCounter] then
+                    RaceMusicCounter = 1
+                end
+                NextTrack1 = RaceMusic[RaceMusicCounter]
+                NextTrack2 = RaceMusic[RaceMusicCounter+1]
+            else
+                OtherMusicCounter = OtherMusicCounter + 1
+                if not OtherMusic[OtherMusicCounter] then
+                    OtherMusicCounter = 1
+                end
+                NextTrack1 = OtherMusic[OtherMusicCounter]
+                NextTrack2 = OtherMusic[OtherMusicCounter+1]
+            end
+            MusicType = "race"
+
+        else
+
+            OtherMusicCounter = OtherMusicCounter + 1
+            if not OtherMusic[OtherMusicCounter] then
+                OtherMusicCounter = 1
+            end
+            NextTrack1 = OtherMusic[OtherMusicCounter]
+            NextTrack2 = OtherMusic[OtherMusicCounter+1]
             MusicType = "other"
-
+            
         end
-
-        --ac.log("ReplayMusicCounter", ReplayMusicCounter)
-        --ac.log("FinishPodiumMusicCounter", FinishPodiumMusicCounter)
-        --ac.log("FinishMusicCounter", FinishMusicCounter)
-        --ac.log("WaitingMusicCounter", WaitingMusicCounter)
-        --ac.log("PracticeMusicCounter", PracticeMusicCounter)
-        --ac.log("QualificationMusicCounter", QualificationMusicCounter)
-        --ac.log("LowMusicCounter", LowMusicCounter)
-        --ac.log("HighMusicCounter", HighMusicCounter)
-
-        --FilePath = testFilePath[2]
-        --ac.log(testFilePath[1], FilePath)
-        --CurrentlyPlaying = testFilePath[1]
 
         if (not NextTrack2) or (NextTrack2 and NextTrack2[1] ~= CurrentlyPlaying and (attempts == 10 or (PlayedTracksDatabase:get("data", NextTrack1[1], 0) <= PlayedTracksDatabase:get("data", NextTrack2[1], 0)))) then
             TrackChoosen = true
@@ -622,6 +631,7 @@ end
 UpdateCounter = 0
 SkipAttempts = 0
 function script.update(dt)
+
     local gameDt = ac.getGameDeltaT()
     UpdateCounter = UpdateCounter+1
 
@@ -629,15 +639,15 @@ function script.update(dt)
         Car = ac.getCar(Sim.focusedCar)
         PlayerCarSpeed = Car.speedKmh
 
-        if HitValue > 0.01 then
-            HitValue = HitValue - (PlayerCarSpeed*0.00001) - 0.0005
-        elseif HitValue <= 0.01 then
+        if HitValue > 0.001 then
+            HitValue = HitValue - (PlayerCarSpeed*0.000001) - 0.0005
+        elseif HitValue <= 0.001 then
             HitValue = 0
         end
 
         if Car.collisionDepth > 0 and gameDt > 0 then
             local nHit = math.saturateN((HitSpeedLast - PlayerCarSpeed) / 40)
-            if nHit > HitValue and nHit > 0.1 then
+            if nHit > HitValue and nHit > 0.01 then
                 HitValue = nHit
             end
         end
@@ -681,9 +691,9 @@ function script.update(dt)
         if CurrentTrack then
             CurrentVolume = CurrentTrack:volume()
         end
-        if CurrentTrack and CurrentVolume >= (TargetVolume*TargetVolumeMultiplier) + math.min(FadeInSpeed, FadeOutSpeed) then
+        if CurrentTrack and CurrentVolume >= (TargetVolume*TargetVolumeMultiplier) then
             if ConfigFadeOutSpeed < 3 then
-                CurrentVolume = CurrentVolume - (FadeOutSpeed*FadeOutSpeedMultiplier)
+                CurrentVolume = math.max(CurrentVolume - (FadeOutSpeed*FadeOutSpeedMultiplier), (TargetVolume*TargetVolumeMultiplier))
             else
                 CurrentVolume = (TargetVolume*TargetVolumeMultiplier)
             end
@@ -720,9 +730,9 @@ function script.update(dt)
                     SkipAttempts = 0
                 end
             end
-        elseif CurrentTrack and CurrentVolume <= (TargetVolume*TargetVolumeMultiplier) - math.min(FadeInSpeed, FadeOutSpeed) then
+        elseif CurrentTrack and CurrentVolume <= (TargetVolume*TargetVolumeMultiplier) then
             if ConfigFadeInSpeed < 3 then
-                CurrentVolume = CurrentVolume + (FadeInSpeed*FadeInSpeedMultiplier)
+                CurrentVolume = math.min(CurrentVolume + (FadeInSpeed*FadeInSpeedMultiplier), (TargetVolume*TargetVolumeMultiplier))
             else
                 CurrentVolume = (TargetVolume*TargetVolumeMultiplier)
             end
@@ -732,11 +742,13 @@ function script.update(dt)
         end
     end
 
-    if HitValue > 0 and PlayerCarSpeed < 30 then
-        CurrentVolume = math.max(0, CurrentVolume)
-        CurrentTrack:setVolume(CurrentVolume)
-    end
+    --if HitValue > 0 and PlayerCarSpeed < 30 then
+    --    CurrentVolume = math.max(0, CurrentVolume)
+    --    CurrentTrack:setVolume(CurrentVolume)
+    --end
 
+    --runGC()
+    --printGC()
 end
 
 function TabsFunction()
@@ -754,66 +766,63 @@ end
 -- end
 
 function SessionsTab()
-    
-    checkbox = ui.checkbox("Enable Practice Playlist (If disabled, using race music during practice)", EnablePracticePlaylist)
-    if checkbox then
-        EnablePracticePlaylist = not EnablePracticePlaylist
-        ConfigFile:set("settings", "practiceenabled", EnablePracticePlaylist)
-        NeedToSaveConfig = true
-    end
-
-    checkbox = ui.checkbox("Enable Qualifying Playlist (If disabled, using race music during qualifiers)", EnableQualifyingPlaylist)
-    if checkbox then
-        EnableQualifyingPlaylist = not EnableQualifyingPlaylist
-        ConfigFile:set("settings", "qualifyingenabled", EnableQualifyingPlaylist)
-        NeedToSaveConfig = true
-    end
-
-    checkbox = ui.checkbox("Enable Idle mode playlist", EnableIdlePlaylist)
-    if checkbox then
-        EnableIdlePlaylist = not EnableIdlePlaylist
-        ConfigFile:set("settings", "idleenabled", EnableIdlePlaylist)
-        NeedToSaveConfig = true
-    end
-
-    if EnableIdlePlaylist then
-        checkbox = ui.checkbox("Enable Idle mode playlist outside of pits", EnableIdlePlaylistOutsidePits)
+    if PracticeMusic[1] then
+        checkbox = ui.checkbox("Enable Practice Playlist (If disabled, using Other music during practice)", EnablePracticePlaylist)
         if checkbox then
-            EnableIdlePlaylistOutsidePits = not EnableIdlePlaylistOutsidePits
-            ConfigFile:set("settings", "idleoutsidepits", EnableIdlePlaylistOutsidePits)
+            EnablePracticePlaylist = not EnablePracticePlaylist
+            ConfigFile:set("settings", "practiceenabled", EnablePracticePlaylist)
             NeedToSaveConfig = true
         end
     end
 
-    checkbox = ui.checkbox("Enable Replay mode playlist", EnableReplayPlaylist)
-    if checkbox then
-        EnableReplayPlaylist = not EnableReplayPlaylist
-        ConfigFile:set("settings", "replayenabled", EnableReplayPlaylist)
-        NeedToSaveConfig = true
+    if QualificationMusic[1] then
+        checkbox = ui.checkbox("Enable Qualifying Playlist (If disabled, using Other music during qualifiers)", EnableQualifyingPlaylist)
+        if checkbox then
+            EnableQualifyingPlaylist = not EnableQualifyingPlaylist
+            ConfigFile:set("settings", "qualifyingenabled", EnableQualifyingPlaylist)
+            NeedToSaveConfig = true
+        end
     end
 
-    checkbox = ui.checkbox("Enable Finish playlists", EnableFinishPlaylist)
-    if checkbox then
-        EnableFinishPlaylist = not EnableFinishPlaylist
-        ConfigFile:set("settings", "finishenabled", EnableFinishPlaylist)
-        NeedToSaveConfig = true
+    if IdleMusic[1] then
+        checkbox = ui.checkbox("Enable Idle mode playlist", EnableIdlePlaylist)
+        if checkbox then
+            EnableIdlePlaylist = not EnableIdlePlaylist
+            ConfigFile:set("settings", "idleenabled", EnableIdlePlaylist)
+            NeedToSaveConfig = true
+        end
+
+        if EnableIdlePlaylist then
+            checkbox = ui.checkbox("Enable Idle mode playlist outside of pits", EnableIdlePlaylistOutsidePits)
+            if checkbox then
+                EnableIdlePlaylistOutsidePits = not EnableIdlePlaylistOutsidePits
+                ConfigFile:set("settings", "idleoutsidepits", EnableIdlePlaylistOutsidePits)
+                NeedToSaveConfig = true
+            end
+        end
+    end
+
+    if ReplayMusic[1] then
+        checkbox = ui.checkbox("Enable Replay mode playlist", EnableReplayPlaylist)
+        if checkbox then
+            EnableReplayPlaylist = not EnableReplayPlaylist
+            ConfigFile:set("settings", "replayenabled", EnableReplayPlaylist)
+            NeedToSaveConfig = true
+        end
+    end
+
+    if FinishMusic[1] then
+        checkbox = ui.checkbox("Enable Finish playlists", EnableFinishPlaylist)
+        if checkbox then
+            EnableFinishPlaylist = not EnableFinishPlaylist
+            ConfigFile:set("settings", "finishenabled", EnableFinishPlaylist)
+            NeedToSaveConfig = true
+        end
     end
 
 end
 
 function BehaviourTab()
-    ui.text('Intensity Level Threshold')
-    ui.text('#Intensity percentage at which HighIntensity playlist is used.')
-    local sliderValue2 = ConfigHighIntensityThreshold
-    sliderValue2 = ui.slider("(Default 0.6) ##slider2", sliderValue2, 0, 1)
-    if ConfigHighIntensityThreshold ~= sliderValue2 then
-        ConfigHighIntensityThreshold = sliderValue2
-        ConfigFile:set("settings", "highintensitythreshold", sliderValue2)
-        NeedToSaveConfig = true
-    end
-    if ui.itemHovered() then
-        ui.setTooltip('You can drop this all the way to 0 to completely skip low intensity tier and have only one tier of music for races. The value is calculated based on your position related to the amount of cars in the race, on how far the race has progressed, and how fast the car you are driving is, both average and top. Each of those contributes 25% intensity. However, intensity is boosted when you are near top positions or near the end of the race')
-    end
 
     ui.text('Fade-In Speed Multiplier')
 
@@ -844,8 +853,7 @@ function BehaviourTab()
 
     if true then
         ui.separator()
-        ui.text('Minimum Pause Music Volume')
-        ui.text('#Percentage of Maximum Volume, not an absolute value.')
+        ui.text('Pause Music Volume')
         local sliderValue3d = ConfigMinimumPauseVolume
         sliderValue3d = ui.slider("(Default 0.1) ##slider3d", sliderValue3d, 0, 1)
         if ConfigMinimumPauseVolume ~= sliderValue3d then
@@ -859,7 +867,7 @@ function BehaviourTab()
         ui.separator()
     end
 
-    checkbox = ui.checkbox("Enable caution flag volume fadeout", EnableDynamicCautionVolume)
+    checkbox = ui.checkbox("Enable Caution Flag Volume Fadeout", EnableDynamicCautionVolume)
     if ui.itemHovered() then
         ui.setTooltip('Volume will drop down when you are under yellow or blue flag. It will also drop when you get a slowdown penalty. It is intended to make you focused during cautious situations.')
     end
@@ -871,10 +879,9 @@ function BehaviourTab()
 
     if EnableDynamicCautionVolume then
         
-        ui.text('Minimum Caution Flag Music Volume')
-        ui.text('#Percentage of Maximum Volume, not an absolute value.')
+        ui.text('Caution Flag Music Volume Multiplier')
         local sliderValue3a = ConfigMinimumCautionVolume
-        sliderValue3a = ui.slider("(Default 0.2) ##slider3a", sliderValue3a, 0, 1)
+        sliderValue3a = ui.slider("(Default 0.1) ##slider3a", sliderValue3a, 0, 1)
         if ConfigMinimumCautionVolume ~= sliderValue3a then
             ConfigMinimumCautionVolume = sliderValue3a
             ConfigFile:set("settings", "mincautionvolume", sliderValue3a)
@@ -886,7 +893,7 @@ function BehaviourTab()
         ui.separator()
     end
 
-    checkbox = ui.checkbox("Enable opponent proximity volume fadeout", EnableDynamicProximityVolume)
+    checkbox = ui.checkbox("Enable Opponent Proximity Volume Fadeout", EnableDynamicProximityVolume)
     if ui.itemHovered() then
         ui.setTooltip('Volume will drop down when you have other cars around you. Proximity check range also increases with speed.')
     end
@@ -897,8 +904,7 @@ function BehaviourTab()
     end
 
     if EnableDynamicProximityVolume then
-        ui.text('Minimum Opponent Proximity Music Volume')
-        ui.text('#Percentage of Maximum Volume, not an absolute value.')
+        ui.text('Opponent Proximity Music Volume Multiplier')
         local sliderValue3b = ConfigMinimumProximityVolume
         sliderValue3b = ui.slider("(Default 0.5) ##slider3b", sliderValue3b, 0, 1)
         if ConfigMinimumProximityVolume ~= sliderValue3b then
@@ -912,7 +918,7 @@ function BehaviourTab()
         ui.separator()
     end
 
-    checkbox = ui.checkbox("Enable low speed volume fadeout", EnableDynamicSpeedVolume)
+    checkbox = ui.checkbox("Enable Low Speed Volume Fadeout", EnableDynamicSpeedVolume)
     if ui.itemHovered() then
         ui.setTooltip('Volume will drop down when you drive slow. The app calibrates itself to your car and track combo after a few laps. Starting value is to use average speed of 200.')
     end
@@ -924,10 +930,9 @@ function BehaviourTab()
 
     if EnableDynamicSpeedVolume then
         
-        ui.text('Minimum Speed Music Volume')
-        ui.text('#Percentage of Maximum Volume, not an absolute value.')
+        ui.text('Low Speed Music Volume Multiplier')
         local sliderValue3c = ConfigMinimumSpeedVolume
-        sliderValue3c = ui.slider("(Default 0.2) ##slider3c", sliderValue3c, 0, 1)
+        sliderValue3c = ui.slider("(Default 0.5) ##slider3c", sliderValue3c, 0, 1)
         if ConfigMinimumSpeedVolume ~= sliderValue3c then
             ConfigMinimumSpeedVolume = sliderValue3c
             ConfigFile:set("settings", "minspeedvolume", sliderValue3c)
@@ -939,7 +944,7 @@ function BehaviourTab()
         ui.separator()
     end
 
-    checkbox = ui.checkbox("Enable crashing volume fadeout", EnableDynamicCrashingVolume)
+    checkbox = ui.checkbox("Enable Crashing Volume Fadeout", EnableDynamicCrashingVolume)
     if ui.itemHovered() then
         ui.setTooltip('Music will fade away when you crash.')
     end
@@ -950,7 +955,7 @@ function BehaviourTab()
     end
 
     if EnableDynamicCrashingVolume then
-        checkbox = ui.checkbox("Enable music track skip when crashing out", EnableDynamicCrashingTrackSkip)
+        checkbox = ui.checkbox("Enable Music Track Skip When Crashing Out", EnableDynamicCrashingTrackSkip)
         if ui.itemHovered() then
             ui.setTooltip('When you crash into full stop, current track will be stopped and the new one will start once the crashing effect fades away.')
         end
@@ -962,12 +967,13 @@ function BehaviourTab()
     end
 
     ui.separator()
-
-    checkbox = ui.checkbox("Play Victory Music if finished in Top25%, otherwise play only if finished in Top3", PodiumFinishTop25Percent)
-    if checkbox then
-        PodiumFinishTop25Percent = not PodiumFinishTop25Percent
-        ConfigFile:set("settings", "podiumtop25", PodiumFinishTop25Percent)
-        NeedToSaveConfig = true
+    if FinishPodiumMusic[1] then
+        checkbox = ui.checkbox("Play Victory Music if finished in Top25%, otherwise play only if finished in Top3", PodiumFinishTop25Percent)
+        if checkbox then
+            PodiumFinishTop25Percent = not PodiumFinishTop25Percent
+            ConfigFile:set("settings", "podiumtop25", PodiumFinishTop25Percent)
+            NeedToSaveConfig = true
+        end
     end
 
 end
@@ -1015,7 +1021,7 @@ function NowPlayingWidgetTab()
 
     if EnableNowPlayingWidgetFadeout then
         ui.text('Show the widget for first ' .. math.ceil(NowPlayingWidgetFadeoutTime) .. ' seconds of new track')
-        local sliderValue7 = ConfigFile:get("settings", "nowplayingfadeouttime", 1)
+        local sliderValue7 = ConfigFile:get("settings", "nowplayingfadeouttime", 10)
         sliderValue7 = ui.slider("Seconds (Default 10) ##slider7", sliderValue7, 5, 30, "%.1f")
         if NowPlayingWidgetFadeoutTime ~= sliderValue7 then
             NowPlayingWidgetFadeoutTime = sliderValue7
@@ -1039,7 +1045,6 @@ end
 function DebugTab()
     ui.text("CurrentlyPlaying: " .. CurrentlyPlaying)
     ui.text("Playlist: " .. MusicType)
-    ui.text("IntensityLevel: " .. IntensityLevel)
     ui.text("Top Speed: " .. TopSpeed)
     ui.text("Average Speed: " .. AverageSpeed)
     ui.text("Crash Value: " .. HitValue)
@@ -1085,7 +1090,7 @@ function script.windowNowPlaying()
     local windowWidthRange = 75
     if EnableNowPlayingIcon and NowPlayingOpacityCurrent > 0 then
         if EnableAnimatedNowPlayingIcon then
-            if UpdateCounter%10 == 0 or RefreshBarTargets then
+            if UpdateCounter%20 == 0 or RefreshBarTargets then
                 NowPlayingBars = {
                     [1] = {current = NowPlayingBars[1].current, target = math.random(0,128)/128},
                     [2] = {current = NowPlayingBars[2].current, target = math.random(0,128)/128},
@@ -1100,10 +1105,10 @@ function script.windowNowPlaying()
             RefreshBarTargets = true
             for barIndex, barValue in ipairs(NowPlayingBars) do
                 if barValue.current > barValue.target then
-                    NowPlayingBars[barIndex].current = barValue.current - ((barValue.current - barValue.target)*0.1)
+                    NowPlayingBars[barIndex].current = barValue.current - ((barValue.current - barValue.target)*0.05)
                     RefreshBarTargets = false
                 elseif barValue.current < barValue.target then
-                    NowPlayingBars[barIndex].current = barValue.current - ((barValue.current - barValue.target)*0.1)
+                    NowPlayingBars[barIndex].current = barValue.current - ((barValue.current - barValue.target)*0.05)
                     RefreshBarTargets = false
                 end
                 if NowPlayingWidgetSize < 0.80 then
@@ -1122,7 +1127,7 @@ function script.windowNowPlaying()
     ui.setColumnWidth(0, windowWidthRange*NowPlayingWidgetSize)
     ui.setColumnWidth(1, 10000)
     ui.beginOutline()
-    ui.pushDWriteFont('Poppins:\\Fonts;Weight=Medium')
+    ui.pushDWriteFont('OPTIEdgarBold:\\Fonts;Weight=Medium')
     ui.dwriteText("", math.floor(5*NowPlayingWidgetSize), rgbm(1, 1, 1, NowPlayingOpacityCurrent))
     
     local text1

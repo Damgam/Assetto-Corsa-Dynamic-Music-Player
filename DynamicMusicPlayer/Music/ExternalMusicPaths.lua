@@ -7,7 +7,7 @@
 -- If some playlist is filled with stuff from this list, it no longer needs to have any files in the apps music folders, so you can safely delete the screaming placeholders
 
 FoldersList = {
-    Waiting = {
+    Idle = {
         -- "X:/folder/folder/anotherfolder/theresmusicinthisfolder", -- example
     },
     Practice = {
@@ -16,19 +16,19 @@ FoldersList = {
     Qualification = {
         -- "X:/folder/folder/anotherfolder/theresmusicinthisfolder", -- example
     },
-    LowIntensity = {
-        -- "X:/folder/folder/anotherfolder/theresmusicinthisfolder", -- example
-    },
-    HighIntensity = {
+    Race = {
         -- "X:/folder/folder/anotherfolder/theresmusicinthisfolder", -- example
     },
     Replay = {
         -- "X:/folder/folder/anotherfolder/theresmusicinthisfolder", -- example
     },
-    FinishLose = {
+    Finish = {
         -- "X:/folder/folder/anotherfolder/theresmusicinthisfolder", -- example
     },
     FinishPodium = {
+        -- "X:/folder/folder/anotherfolder/theresmusicinthisfolder", -- example
+    },
+    Other = {
         -- "X:/folder/folder/anotherfolder/theresmusicinthisfolder", -- example
     },
 }

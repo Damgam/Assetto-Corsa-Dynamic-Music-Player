@@ -1,3 +1,22 @@
+2.0
+A LOT OF THINGS HAVE CHANGED. FRESH INSTALL IS VERY RECOMMENDED.
+
+- Complete rework of volume effects. Now instead of each effect fighting for which gets the lowest volume, they stack up. This means that for example, driving slow near opponents, will give you lower music volume than driving fast near opponents,
+- Intensity level has been removed, to simplify the process of including music to the mod,
+- LowIntensity and HighIntensity playlists are now replaced with a new, Race playlist,
+- Waiting folder got renamed to Idle,
+- FinishLose folder got renamed to Finish. It is no longer necessary to add both Finish and FinishPodium. If FinishPodium is empty, it will always pick Finish folder music instead.
+- Added new playlist - Other,
+- From now on, the mod won't fail if you leave some folders empty. The only folder that you NEED to fill with music, is the Other folder. Everything else is optional,
+- Options menu now reacts to which folders have been left empty, and doesn't show toggle options for those in Sessions tab,
+- Replaced Now Playing widget font with OPTIEdgarBold,
+- Now Plalying widget now only shows for the first 10 seconds of the track by default
+- Track switch on crashing out has been turned off by default
+- Toggling music on and off properly saves between sessions now.
+
+If you find any bugs/problems with this release, please report them to me in the mod discussion thread on Overtake.gg, or create an issue ticket on GitHub.
+And remember, for everything to work as intended, fresh install is very recommended. A lot of defaults have changed, some options got removed or shifted around.
+
 1.3.1
 - Some bugfixes for new features added in 1.3
 
