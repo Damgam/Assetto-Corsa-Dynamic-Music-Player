@@ -1,3 +1,10 @@
+2.0.2
+- Fixed idle music outside of pits option not working,
+- Fixed fade in/out speeds being broken with 100% AC Master volume,
+
+2.0.1
+oops, forgot to delete placeholders
+
 2.0
 A LOT OF THINGS HAVE CHANGED. FRESH INSTALL IS VERY RECOMMENDED.
 

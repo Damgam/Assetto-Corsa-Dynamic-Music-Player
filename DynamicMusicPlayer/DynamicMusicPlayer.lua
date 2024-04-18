@@ -188,7 +188,6 @@ table.shuffle(IdleMusic)
 TargetVolume = -10
 TargetVolumeMultiplier = 1
 CurrentVolume = 0
-IntensityLevel = 0
 IdleTimer = 10
 HitValue = 0
 HitSpeedLast = 0
@@ -232,8 +231,8 @@ function updateConfig()
     MinimumProximityVolume = ConfigMinimumProximityVolume
     MinimumSpeedVolume = ConfigMinimumSpeedVolume
     MinimumPauseVolume = ConfigMinimumPauseVolume
-    FadeInSpeed = 0.01 * ConfigFadeInSpeed * (1-MasterVolume) * MaxVolume
-    FadeOutSpeed = 0.05 * ConfigFadeOutSpeed * (1-MasterVolume) * MaxVolume
+    FadeInSpeed = 0.01 * ConfigFadeInSpeed * MaxVolume
+    FadeOutSpeed = 0.05 * ConfigFadeOutSpeed * MaxVolume
 end
 updateConfig()
 
@@ -257,7 +256,7 @@ function updateRaceStatusData()
 
     if ((Car.isInPitlane or Car.isInPit) or (Sim.timeToSessionStart > 0)) and EnableIdlePlaylist then
         IdleTimer = math.max(11, IdleTimer)
-    elseif PlayerCarSpeed <= 1 and EnableIdlePlaylist and EnableIdleMusicOutsidePits then
+    elseif PlayerCarSpeed <= 1 and EnableIdlePlaylist and EnableIdlePlaylistOutsidePits then
         IdleTimer = IdleTimer + 1
     else
         IdleTimer = 0
@@ -433,7 +432,7 @@ function updateRaceStatusData()
     (MusicType  == "practice" and Session.type ~= 1) or -- Practice music is playing but we're not in practice
     (MusicType  == "quali" and Session.type ~= 2) or -- Qualification music is playing but we're not in qualis
     (MusicType  == "race" and Session.type ~= 3) or -- Race music is playing but we're not in race
-    (MusicType  ~= "finish" and PlayerFinished and (not PlayedFinishTrack)) or -- We finished the race
+    (MusicType  ~= "finish" and PlayerFinished and (not PlayedFinishTrack) and FinishMusic[1]) or -- We finished the race
     (EnableMusic == false) or -- We toggled off the music, turn it off
     (SessionSwitched or TrackSwitched) or -- Session has switched so we should play new track
     (CurrentTrack and CurrentTrack:currentTime() > CurrentTrack:duration() - 2) -- Track is almost over, fade it out.
@@ -621,6 +620,7 @@ function getNewTrack()
         end
 
         if TrackChoosen then
+            --ac.log(FilePath)
             break
         end
     end
