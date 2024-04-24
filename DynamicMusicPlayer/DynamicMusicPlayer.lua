@@ -272,10 +272,15 @@ function updateRaceStatusData()
         PlayedFinishTrack = false
     end
 
-    if Session.type == 3 and Sim.timeToSessionStart > 0 and Sim.timeToSessionStart < 10000 and (not Sim.isReplayActive) then
+    RaceStartVolumeMultiplier = 1
+    if Session.type == 3 and Sim.timeToSessionStart > 0 and Sim.timeToSessionStart < 60000 then
         IdleTimer = -10
-        SessionSwitched = true
+        --SessionSwitched = true
+        RaceStartVolumeMultiplier = math.max(0, math.min(1, (Sim.timeToSessionStart-10000)/60000))
         StartMusic = true
+        if Sim.timeToSessionStart < 10000 then
+            SessionSwitched = true
+        end
     elseif previousSessionStartTimer < Sim.timeToSessionStart-1 and (not Sim.isReplayActive) then
         if EnableIdlePlaylist then
             IdleTimer = math.max(11, IdleTimer)
@@ -307,7 +312,7 @@ function updateRaceStatusData()
             if opponentCar then
                 local CarPos = opponentCar.position
                 local CarInPits = (opponentCar.isInPitlane or opponentCar.isInPit)
-                local distance = PlayerCarSpeed*0.2
+                local distance = AverageSpeed
                 if (not CarInPits) and CarPos.x >= PlayerCarPos.x-distance and CarPos.x <= PlayerCarPos.x+distance and CarPos.z >= PlayerCarPos.z-distance and CarPos.z <= PlayerCarPos.z+distance then
                     local distX = math.abs(PlayerCarPos.x - CarPos.x)
                     local distZ = math.abs(PlayerCarPos.z - CarPos.z)
@@ -320,7 +325,8 @@ function updateRaceStatusData()
     end
 
     if PlayerFinished or MusicType == "idle" then
-        TargetVolumeMultiplier = 1
+        TargetVolumeMultiplier = 1*RaceStartVolumeMultiplier
+        ac.log(RaceStartVolumeMultiplier)
     elseif Sim.isPaused then
         TargetVolumeMultiplier = MinimumPauseVolume
     else
@@ -340,7 +346,7 @@ function updateRaceStatusData()
         end
 
         if EnableDynamicProximityVolume then
-            local x = math.max(math.min(lowestDist/(PlayerCarSpeed*0.1), 1), 0)
+            local x = math.max(math.min(lowestDist/(AverageSpeed*0.1), 1), 0)
             ProximityVolumeMultiplier = scalePercentage(x, MinimumProximityVolume)
         else
             ProximityVolumeMultiplier = 1
@@ -361,7 +367,7 @@ function updateRaceStatusData()
             CautionVolume = math.min(CautionVolume + (MinimumCautionVolume*0.2), 1)
         end
         --ac.log(CautionVolumeMultiplier)
-        TargetVolumeMultiplier = TargetVolumeMultiplier * SpeedVolumeMultiplier * ProximityVolumeMultiplier * CrashingVolumeMultiplier * CautionVolumeMultiplier
+        TargetVolumeMultiplier = TargetVolumeMultiplier * SpeedVolumeMultiplier * ProximityVolumeMultiplier * CrashingVolumeMultiplier * CautionVolumeMultiplier * RaceStartVolumeMultiplier
     end
 
     TimeIntensity = math.min(1, (-((Sim.sessionTimeLeft/1000/60)/(Session.durationMinutes)))+1)
@@ -432,7 +438,7 @@ function updateRaceStatusData()
     (MusicType  == "practice" and Session.type ~= 1) or -- Practice music is playing but we're not in practice
     (MusicType  == "quali" and Session.type ~= 2) or -- Qualification music is playing but we're not in qualis
     (MusicType  == "race" and Session.type ~= 3) or -- Race music is playing but we're not in race
-    (MusicType  ~= "finish" and PlayerFinished and (not PlayedFinishTrack) and FinishMusic[1]) or -- We finished the race
+    (MusicType  ~= "finish" and PlayerFinished and (not PlayedFinishTrack) and FinishMusic[1] and (not Sim.isReplayActive)) or -- We finished the race
     (EnableMusic == false) or -- We toggled off the music, turn it off
     (SessionSwitched or TrackSwitched) or -- Session has switched so we should play new track
     (CurrentTrack and CurrentTrack:currentTime() > CurrentTrack:duration() - 2) -- Track is almost over, fade it out.
@@ -458,7 +464,7 @@ function updateRaceStatusData()
         FadeOutSpeedMultiplier = 1
     end
 
-    if not (SessionSwitched or TrackSwitched) then
+    if not (SessionSwitched or TrackSwitched) and Sim.timeToSessionStart < 0 then
         if Sim.timeToSessionStart > -20000 then
             FadeOutSpeedMultiplier = FadeOutSpeedMultiplier * 0.05
         elseif Sim.timeToSessionStart > -30000 then
@@ -665,7 +671,7 @@ function script.update(dt)
     ConfigMaxVolume > 0 and
     HitValue == 0 and
     (not CurrentTrack or CurrentTrack:currentTime() >= CurrentTrack:duration() - 1) and 
-    (Session.type ~= 3 or (Session.type == 3 and (Sim.timeToSessionStart < 0 or Sim.timeToSessionStart >= 10000))) then -- Prepare playing new track
+    (Session.type ~= 3 or (Session.type == 3 and (Sim.timeToSessionStart < 0 or Sim.timeToSessionStart >= 60000))) then -- Prepare playing new track
         updateRaceStatusData()
         CurrentTrack = ui.MediaPlayer(getNewTrack())
         TargetVolume = MaxVolume
@@ -708,7 +714,7 @@ function script.update(dt)
 
                 SkipAttempts = SkipAttempts + 1
                 --ac.log("SkipAttempts", SkipAttempts)
-                if EnableMusic and SkipAttempts > 20 and (Session.type ~= 3 or (Session.type == 3 and (Sim.timeToSessionStart < 0 or Sim.timeToSessionStart >= 10000))) then
+                if EnableMusic and SkipAttempts > 20 and (Session.type ~= 3 or (Session.type == 3 and (Sim.timeToSessionStart < 0 or Sim.timeToSessionStart >= 60000))) then
                     updateRaceStatusData()
                     CurrentTrack = ui.MediaPlayer(getNewTrack())
                     TargetVolume = MaxVolume
