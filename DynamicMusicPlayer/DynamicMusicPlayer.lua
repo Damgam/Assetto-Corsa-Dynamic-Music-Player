@@ -262,7 +262,7 @@ function updateRaceStatusData()
         IdleTimer = 0
     end
 
-    if Sim.raceSessionType == 3 and Sim.raceFlagType == 13 and EnableFinishPlaylist then -- finish flag, maybe this one will work reliably in online, lol.
+    if Sim.raceSessionType == 3 and Sim.raceFlagType == 13 and EnableFinishPlaylist and (not Sim.isReplayActive) then -- finish flag, maybe this one will work reliably in online, lol.
         PlayerFinished = true
     else
         PlayerFinished = false
@@ -438,7 +438,7 @@ function updateRaceStatusData()
     (MusicType  == "practice" and Session.type ~= 1) or -- Practice music is playing but we're not in practice
     (MusicType  == "quali" and Session.type ~= 2) or -- Qualification music is playing but we're not in qualis
     (MusicType  == "race" and Session.type ~= 3) or -- Race music is playing but we're not in race
-    (MusicType  ~= "finish" and PlayerFinished and (not PlayedFinishTrack) and FinishMusic[1] and (not Sim.isReplayActive)) or -- We finished the race
+    (MusicType  ~= "finish" and PlayerFinished and (not PlayedFinishTrack) and FinishMusic[1]) or -- We finished the race
     (EnableMusic == false) or -- We toggled off the music, turn it off
     (SessionSwitched or TrackSwitched) or -- Session has switched so we should play new track
     (CurrentTrack and CurrentTrack:currentTime() > CurrentTrack:duration() - 2) -- Track is almost over, fade it out.
