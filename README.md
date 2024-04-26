@@ -34,4 +34,4 @@ Features of this app:
 
 Known Issues:
 - If by any chance you got your Assetto Corsa to work on Linux, or some debloated version of Windows that is missing Microsoft applications, this app won't work there. It depends on Windows Media Player to exist on your system since that's what CSP Media API depends on. 
-- If you find any other bugs, please report them in Discussion Tab, or GitHub Issues Page
+- If you find any other bugs, please report them in GitHub Issues Page
