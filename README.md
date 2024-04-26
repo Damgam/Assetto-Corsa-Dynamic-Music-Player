@@ -18,6 +18,7 @@ Music Install: Copy your music files into assettocorsa\apps\lua\DynamicMusicPlay
 ALL THE FOLDERS, EXCEPT THE *OTHER* FOLDER, ARE OPTIONAL.
 
 More details on how to install music:
+
 Make sure you include music at least in the 'Other' folder. That one serves as a fallback for every other folder, if it's left empty, but also as music source for all gamemodes that are not practice, qualification and race.Every other folder can be left empty, and adding any music into them, makes these playlist not use the Other music.
 For Finish music to work, there must be some music in the Finish folder. Don't just add music to the FinishPodium folder, it will then be ignored. However, the other way around works perfectly fine, and if FinishPodium is left empty, but Finish is not, it will just play Finish folder music on every finish!
 For advanced users, there's a Lua file left in the Music folder, where they can specify paths to other folders in their system to take music from. BEWARE, make sure these folders don't contain any files that are not music. Images, text files, and similar stuff might break the app. I am also not taking any responsibility for anyone breaking that file. It has been confirmed to work, so if you break it, it's your fault.
