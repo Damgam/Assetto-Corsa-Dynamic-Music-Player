@@ -9,6 +9,8 @@ Older versions of CSP may work but I don't guarantee it.
 
 YOU HAVE BEEN WARNED!
 
+Download: https://github.com/Damgam/Assetto-Corsa-Dynamic-Music-Player/releases
+
 Also available on https://www.overtake.gg/downloads/dynamic-music-player.65459/
 
 Installation: Copy the DynamicMusicPlayer folder into assettocorsa\apps\lua folder.
