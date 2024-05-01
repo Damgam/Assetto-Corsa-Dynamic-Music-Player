@@ -304,24 +304,17 @@ function updateRaceStatusData()
     local lowestDistX = 99999
     local lowestDistZ = 99999
     local lowestDist = 99999
-    for i = 1,CarsInRace do
-        
-        local CarIndex = Session.leaderboard[i-1].car.index
-        if CarIndex ~= Car.index then
-            local opponentCar = ac.getCar(CarIndex)
-            if opponentCar then
-                local CarPos = opponentCar.position
-                local CarInPits = (opponentCar.isInPitlane or opponentCar.isInPit)
-                local distance = AverageSpeed
-                if (not CarInPits) and CarPos.x >= PlayerCarPos.x-distance and CarPos.x <= PlayerCarPos.x+distance and CarPos.z >= PlayerCarPos.z-distance and CarPos.z <= PlayerCarPos.z+distance then
-                    local distX = math.abs(PlayerCarPos.x - CarPos.x)
-                    local distZ = math.abs(PlayerCarPos.z - CarPos.z)
-                    if distX < lowestDistX then lowestDistX = distX end
-                    if distZ < lowestDistZ then lowestDistZ = distZ end
-                    lowestDist = math.min(lowestDist, lowestDistX, lowestDistZ)
-                end
+
+    local lowestDist = 9999999
+    for i = 1,9999 do
+        if ac.getCar(i-1) and i-1 ~= 0 then
+            local distance = math.distance(ac.getCar(0).position, ac.getCar(i-1).position)
+            if distance < lowestDist then
+                lowestDist = distance
             end
-        end 
+        elseif not ac.getCar(i-1) then
+            break
+        end
     end
 
     if PlayerFinished or MusicType == "idle" then
@@ -346,7 +339,8 @@ function updateRaceStatusData()
         end
 
         if EnableDynamicProximityVolume then
-            local x = math.max(math.min(lowestDist/(AverageSpeed*0.1), 1), 0)
+            local x = math.max(math.min(lowestDist/(AverageSpeed*0.2), 1), 0)
+            --ac.log("proxydistance", scalePercentage(x, MinimumProximityVolume), lowestDist/(AverageSpeed*0.2))
             ProximityVolumeMultiplier = scalePercentage(x, MinimumProximityVolume)
         else
             ProximityVolumeMultiplier = 1

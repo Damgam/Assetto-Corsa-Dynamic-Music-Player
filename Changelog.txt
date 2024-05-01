@@ -1,3 +1,6 @@
+2.0.4
+- Reworked proximity volume distance checks to be way more reliable. Old implementation was giving really weird results with changing directions.
+
 2.0.3
 - Proximity Volume now uses your average speed instead of current, for more consistent results.
 - In online, music volume will now slowly fade away towards the race start countdown, instead of doing it suddenly 10 seconds before start.
