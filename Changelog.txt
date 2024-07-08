@@ -1,3 +1,9 @@
+2.1
+- Fixed replay music behaviour. Again... 
+- Situational music fading is no longer active in replays.
+Hopefully this is the last time I need to fix replays.
+- Added checks for pitting and offline cars to Opponent Proximity check. Should properly ignore these cars now.
+
 2.0.4
 - Reworked proximity volume distance checks to be way more reliable. Old implementation was giving really weird results with changing directions.
 

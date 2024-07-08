@@ -273,7 +273,7 @@ function updateRaceStatusData()
     end
 
     RaceStartVolumeMultiplier = 1
-    if Session.type == 3 and Sim.timeToSessionStart > 0 and Sim.timeToSessionStart < 60000 then
+    if Session.type == 3 and Sim.timeToSessionStart > 0 and Sim.timeToSessionStart < 60000 and (not Sim.isReplayActive) then
         IdleTimer = -10
         --SessionSwitched = true
         RaceStartVolumeMultiplier = math.max(0, math.min(1, (Sim.timeToSessionStart-10000)/60000))
@@ -301,23 +301,21 @@ function updateRaceStatusData()
     end
 
     PlayerCarPos = ac.getCar(Car.index).position
-    local lowestDistX = 99999
-    local lowestDistZ = 99999
-    local lowestDist = 99999
-
     local lowestDist = 9999999
     for i = 1,9999 do
-        if ac.getCar(i-1) and i-1 ~= 0 then
-            local distance = math.distance(ac.getCar(0).position, ac.getCar(i-1).position)
-            if distance < lowestDist then
+        if ac.getCar(i) and i ~= 0 then
+            local distance = math.distance(ac.getCar(0).position, ac.getCar(i).position)
+            if distance < lowestDist and (not ac.getCar(i).isInPit) and (not ac.getCar(i).isInPitlane) and ac.getCar(i).isConnected then
                 lowestDist = distance
             end
-        elseif not ac.getCar(i-1) then
+        elseif not ac.getCar(i) then
             break
         end
     end
 
-    if PlayerFinished or MusicType == "idle" then
+    if Sim.isReplayActive then
+        TargetVolumeMultiplier = 1
+    elseif PlayerFinished or MusicType == "idle" then
         TargetVolumeMultiplier = 1*RaceStartVolumeMultiplier
         ac.log(RaceStartVolumeMultiplier)
     elseif Sim.isPaused then
@@ -367,7 +365,7 @@ function updateRaceStatusData()
     TimeIntensity = math.min(1, (-((Sim.sessionTimeLeft/1000/60)/(Session.durationMinutes)))+1)
     LapIntensity = (Car.sessionLapCount+1)/Session.laps
     
-    if (not Session.isTimedRace) and Session.type == 3 then
+    if (not Session.isTimedRace) and Session.type == 3 and (not Sim.isReplayActive) then
 
         if LapIntensity > 0.97 then -- boost the volume a little near the end of the race
             TargetVolumeMultiplier = math.min(TargetVolumeMultiplier + TargetVolumeMultiplier*0.20, 1)
@@ -389,7 +387,7 @@ function updateRaceStatusData()
             TargetVolumeMultiplier = math.min(TargetVolumeMultiplier + TargetVolumeMultiplier*0.05, 1)
         end
 
-    elseif Session.type == 3 then
+    elseif Session.type == 3 and (not Sim.isReplayActive) then
 
         if TimeIntensity > 0.97 then -- boost the volume a little near the end of the race
             TargetVolumeMultiplier = math.min(TargetVolumeMultiplier + TargetVolumeMultiplier*0.20, 1)
@@ -412,7 +410,7 @@ function updateRaceStatusData()
         end
     end
     
-    if ((not Sim.isOnlineRace) or CSPBuild >= 2715) and Session.type == 3 then -- Positions are broken in online on CSP 0.2.0 and below, so we only enable this feature on the recent versions
+    if ((not Sim.isOnlineRace) or CSPBuild >= 2715) and Session.type == 3 and (not Sim.isReplayActive) then -- Positions are broken in online on CSP 0.2.0 and below, so we only enable this feature on the recent versions
         if PlayerCarRacePosition == 1 then -- boost the volume a little when player is doing well
             TargetVolumeMultiplier = math.min(TargetVolumeMultiplier + TargetVolumeMultiplier*0.20, 1)
         elseif PlayerCarRacePosition <= 3 then
@@ -458,7 +456,7 @@ function updateRaceStatusData()
         FadeOutSpeedMultiplier = 1
     end
 
-    if not (SessionSwitched or TrackSwitched) and Sim.timeToSessionStart < 0 then
+    if not (SessionSwitched or TrackSwitched) and Sim.timeToSessionStart < 0 and (not Sim.isReplayActive) then
         if Sim.timeToSessionStart > -20000 then
             FadeOutSpeedMultiplier = FadeOutSpeedMultiplier * 0.05
         elseif Sim.timeToSessionStart > -30000 then
