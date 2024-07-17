@@ -1,3 +1,7 @@
+2.2
+- Now Playing widget will hide itself if there's no music playing, or if the track is ending, for a cleaner transition to new track.
+- Caution flag volume will kick in faster.
+
 2.1
 - Fixed replay music behaviour. Again... 
 - Situational music fading is no longer active in replays.

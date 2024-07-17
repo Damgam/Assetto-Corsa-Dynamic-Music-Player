@@ -352,11 +352,11 @@ function updateRaceStatusData()
         end
 
         if EnableDynamicCautionVolume and (Sim.raceFlagType == 2 or Sim.raceFlagType == 8 or Sim.raceFlagType == 12) and CautionVolume > MinimumCautionVolume then
-            CautionVolumeMultiplier = math.max(CautionVolume - (MinimumCautionVolume*0.2), MinimumCautionVolume)
-            CautionVolume = math.max(CautionVolume - (MinimumCautionVolume*0.1), MinimumCautionVolume)
+            CautionVolumeMultiplier = math.max(CautionVolume - (MinimumCautionVolume*0.5), MinimumCautionVolume)
+            CautionVolume = math.max(CautionVolume - (MinimumCautionVolume*0.25), MinimumCautionVolume)
         elseif EnableDynamicCautionVolume and CautionVolume < 1 then
-            CautionVolumeMultiplier = math.min(CautionVolume + (MinimumCautionVolume*0.4), 1)
-            CautionVolume = math.min(CautionVolume + (MinimumCautionVolume*0.2), 1)
+            CautionVolumeMultiplier = math.min(CautionVolume + (MinimumCautionVolume*0.2), 1)
+            CautionVolume = math.min(CautionVolume + (MinimumCautionVolume*0.1), 1)
         end
         --ac.log(CautionVolumeMultiplier)
         TargetVolumeMultiplier = TargetVolumeMultiplier * SpeedVolumeMultiplier * ProximityVolumeMultiplier * CrashingVolumeMultiplier * CautionVolumeMultiplier * RaceStartVolumeMultiplier
@@ -706,7 +706,7 @@ function script.update(dt)
 
                 SkipAttempts = SkipAttempts + 1
                 --ac.log("SkipAttempts", SkipAttempts)
-                if EnableMusic and SkipAttempts > 20 and (Session.type ~= 3 or (Session.type == 3 and (Sim.timeToSessionStart < 0 or Sim.timeToSessionStart >= 60000))) then
+                if EnableMusic and SkipAttempts > 20 and (Session.type ~= 3 or (Session.type == 3 and (Sim.timeToSessionStart < 0 or Sim.timeToSessionStart >= 60000))) and HitValue == 0 then
                     updateRaceStatusData()
                     CurrentTrack = ui.MediaPlayer(getNewTrack())
                     TargetVolume = MaxVolume
@@ -1149,6 +1149,10 @@ function script.windowNowPlaying()
     if (not EnableNowPlayingWidgetFadeout) or (CurrentTrack:currentTime() < NowPlayingWidgetFadeoutTime and CurrentTrack:currentTime() > 0.5) then
         NowPlayingOpacityTarget = 1
     else
+        NowPlayingOpacityTarget = 0
+    end
+
+    if NowPlayingOpacityTarget == 1 and (CurrentTrack:currentTime() > CurrentTrack:duration()-2 or CurrentTrack:currentTime() < 1 or (SessionSwitched or TrackSwitched)) then
         NowPlayingOpacityTarget = 0
     end
 
