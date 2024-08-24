@@ -80,6 +80,7 @@ EnableDynamicProximityVolume = ConfigFile:get("settings", "proximityfadeout", tr
 EnableDynamicSpeedVolume = ConfigFile:get("settings", "speedfadeout", true) -- turn down music volume depending on speed of your car
 EnableDynamicCrashingVolume = ConfigFile:get("settings", "crashingfadeout", true) -- turn down music volume when you crash
 EnableDynamicCrashingTrackSkip = ConfigFile:get("settings", "crashingfadeouttrackskip", false) -- turn down music volume when you crash
+EnableSkipRepeatedTracks = ConfigFile:get("settings", "skiprepeatedtracks", false)
 
 ConfigMinimumCautionVolume = ConfigFile:get("settings", "mincautionvolume", 0.1)
 ConfigMinimumProximityVolume = ConfigFile:get("settings", "minproximityvolume", 0.5)
@@ -605,7 +606,7 @@ function getNewTrack()
             
         end
 
-        if (not NextTrack2) or (NextTrack2 and NextTrack2[1] ~= CurrentlyPlaying and (attempts == 10 or (PlayedTracksDatabase:get("data", NextTrack1[1], 0) <= PlayedTracksDatabase:get("data", NextTrack2[1], 0)))) then
+        if (not EnableSkipRepeatedTracks) or (not NextTrack2) or (NextTrack2 and NextTrack2[1] ~= CurrentlyPlaying and (attempts == 10 or (PlayedTracksDatabase:get("data", NextTrack1[1], 0) <= PlayedTracksDatabase:get("data", NextTrack2[1], 0)))) then
             TrackChoosen = true
             FilePath = NextTrack1[2]
             CurrentlyPlaying = NextTrack1[1]
@@ -970,6 +971,16 @@ function BehaviourTab()
         if checkbox then
             PodiumFinishTop25Percent = not PodiumFinishTop25Percent
             ConfigFile:set("settings", "podiumtop25", PodiumFinishTop25Percent)
+            NeedToSaveConfig = true
+        end
+    end
+
+    if true then
+        ui.separator()
+        checkbox = ui.checkbox("Enable auto-skipping tracks that have been played more often than others.", EnableSkipRepeatedTracks)
+        if checkbox then
+            EnableSkipRepeatedTracks = not EnableSkipRepeatedTracks
+            ConfigFile:set("settings", "skiprepeatedtracks", EnableSkipRepeatedTracks)
             NeedToSaveConfig = true
         end
     end

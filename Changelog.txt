@@ -1,6 +1,7 @@
 2.2
 - Now Playing widget will hide itself if there's no music playing, or if the track is ending, for a cleaner transition to new track.
 - Caution flag volume will kick in faster.
+- Added a toggle for the anti-repetition mechanic, and turned it off by default to reduce confusion.
 
 2.1
 - Fixed replay music behaviour. Again... 
