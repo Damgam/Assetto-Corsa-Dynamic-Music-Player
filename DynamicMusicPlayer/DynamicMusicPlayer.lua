@@ -318,7 +318,7 @@ function updateRaceStatusData()
         TargetVolumeMultiplier = 1
     elseif PlayerFinished or MusicType == "idle" then
         TargetVolumeMultiplier = 1*RaceStartVolumeMultiplier
-        ac.log(RaceStartVolumeMultiplier)
+        --ac.log(RaceStartVolumeMultiplier)
     elseif Sim.isPaused then
         TargetVolumeMultiplier = MinimumPauseVolume
     else
@@ -365,6 +365,11 @@ function updateRaceStatusData()
 
     TimeIntensity = math.min(1, (-((Sim.sessionTimeLeft/1000/60)/(Session.durationMinutes)))+1)
     LapIntensity = (Car.sessionLapCount+1)/Session.laps
+    PositionIntensity = (-((PlayerCarRacePosition - 1)/(CarsInRace - 1)))+1
+    if Sim.timeToSessionStart > -10 then
+        TimeIntensity = 0
+        LapIntensity = 0
+    end
     
     if (not Session.isTimedRace) and Session.type == 3 and (not Sim.isReplayActive) then
 
@@ -473,6 +478,149 @@ function updateRaceStatusData()
 
 end
 updateRaceStatusData()
+
+local trimmedWords = {
+    "#Day",
+    "#Night",
+
+    "#PositionTop10",
+    "#PositionTop20",
+    "#PositionTop30",
+    "#PositionTop40",
+    "#PositionTop50",
+    "#PositionTop60",
+    "#PositionTop70",
+    "#PositionTop80",
+    "#PositionTop90",
+
+    "#PositionBottom10",
+    "#PositionBottom20",
+    "#PositionBottom30",
+    "#PositionBottom40",
+    "#PositionBottom50",
+    "#PositionBottom60",
+    "#PositionBottom70",
+    "#PositionBottom80",
+    "#PositionBottom90",
+
+    "#ProgressMin10",
+    "#ProgressMin20",
+    "#ProgressMin30",
+    "#ProgressMin40",
+    "#ProgressMin50",
+    "#ProgressMin60",
+    "#ProgressMin70",
+    "#ProgressMin80",
+    "#ProgressMin90",
+
+    "#ProgressMax10",
+    "#ProgressMax20",
+    "#ProgressMax30",
+    "#ProgressMax40",
+    "#ProgressMax50",
+    "#ProgressMax60",
+    "#ProgressMax70",
+    "#ProgressMax80",
+    "#ProgressMax90",
+}
+
+local function readTrackTags(filename)
+    local canPlay = true
+    local trimmedFilename = filename
+    local ProgressIntensity
+    if Session.isTimedRace then
+        ProgressIntensity = TimeIntensity
+    else
+        ProgressIntensity = LapIntensity
+    end
+    --ac.debug("PositionIntensity", PositionIntensity)
+    --ac.debug("ProgressIntensity", ProgressIntensity)
+    ------------------------------------------------------------------------------------
+    -- Trim the filename:
+    ------------------------------------------------------------------------------------
+    ---
+    for i = 1,#trimmedWords do
+        if string.find(trimmedFilename, trimmedWords[i]) then
+            trimmedFilename = string.gsub(trimmedFilename, trimmedWords[i], "")
+            trimmedFilename = string.gsub(trimmedFilename, "  ", " ")
+        end
+    end
+
+    ------------------------------------------------------------------------------------
+    -- Allow to play:
+    ------------------------------------------------------------------------------------
+
+    -- Daytime/Nighttime
+    if string.find(filename, "#Day") and ac.getSunAngle() >= 90 then -- night
+        canPlay = false
+    end
+    if string.find(filename, "#Night") and ac.getSunAngle() <= 90 then -- day
+        canPlay = false
+    end
+
+    -- Position Top
+    if string.find(filename, "#PositionTop1") and PositionIntensity < 1 then
+        if MusicType == "race" then
+            canPlay = false
+        end
+    elseif string.find(filename, "#PositionTop10") and PositionIntensity < 0.9 or
+           string.find(filename, "#PositionTop20") and PositionIntensity < 0.8 or
+           string.find(filename, "#PositionTop30") and PositionIntensity < 0.7 or
+           string.find(filename, "#PositionTop40") and PositionIntensity < 0.6 or
+           string.find(filename, "#PositionTop50") and PositionIntensity < 0.5 or
+           string.find(filename, "#PositionTop60") and PositionIntensity < 0.4 or
+           string.find(filename, "#PositionTop70") and PositionIntensity < 0.3 or
+           string.find(filename, "#PositionTop80") and PositionIntensity < 0.2 or
+           string.find(filename, "#PositionTop90") and PositionIntensity < 0.1 then
+        if MusicType == "race" then
+            canPlay = false
+        end
+    end
+    -- Position Bottom
+    if     string.find(filename, "#PositionBottom10") and PositionIntensity > 0.1 or
+           string.find(filename, "#PositionBottom20") and PositionIntensity > 0.2 or
+           string.find(filename, "#PositionBottom30") and PositionIntensity > 0.3 or
+           string.find(filename, "#PositionBottom40") and PositionIntensity > 0.4 or
+           string.find(filename, "#PositionBottom50") and PositionIntensity > 0.5 or
+           string.find(filename, "#PositionBottom60") and PositionIntensity > 0.6 or
+           string.find(filename, "#PositionBottom70") and PositionIntensity > 0.7 or
+           string.find(filename, "#PositionBottom80") and PositionIntensity > 0.8 or
+           string.find(filename, "#PositionBottom90") and PositionIntensity > 0.9 then
+        if MusicType == "race" then
+            canPlay = false
+        end
+    end
+    -- Progress Minimum
+    if     string.find(filename, "#ProgressMin10") and ProgressIntensity < 0.1 or
+           string.find(filename, "#ProgressMin20") and ProgressIntensity < 0.2 or
+           string.find(filename, "#ProgressMin30") and ProgressIntensity < 0.3 or
+           string.find(filename, "#ProgressMin40") and ProgressIntensity < 0.4 or
+           string.find(filename, "#ProgressMin50") and ProgressIntensity < 0.5 or
+           string.find(filename, "#ProgressMin60") and ProgressIntensity < 0.6 or
+           string.find(filename, "#ProgressMin70") and ProgressIntensity < 0.7 or
+           string.find(filename, "#ProgressMin80") and ProgressIntensity < 0.8 or
+           string.find(filename, "#ProgressMin90") and ProgressIntensity < 0.9 then
+        if MusicType == "race" then
+            canPlay = false
+        end
+    end
+    -- Progress Maximum
+    if  string.find(filename, "#ProgressMax10") and ProgressIntensity > 0.1 or
+        string.find(filename, "#ProgressMax20") and ProgressIntensity > 0.2 or
+        string.find(filename, "#ProgressMax30") and ProgressIntensity > 0.3 or
+        string.find(filename, "#ProgressMax40") and ProgressIntensity > 0.4 or
+        string.find(filename, "#ProgressMax50") and ProgressIntensity > 0.5 or
+        string.find(filename, "#ProgressMax60") and ProgressIntensity > 0.6 or
+        string.find(filename, "#ProgressMax70") and ProgressIntensity > 0.7 or
+        string.find(filename, "#ProgressMax80") and ProgressIntensity > 0.8 or
+        string.find(filename, "#ProgressMax90") and ProgressIntensity > 0.9 then
+        if MusicType == "race" then
+            canPlay = false
+        end
+    end
+
+    return trimmedFilename, canPlay
+end
 
 function getNewTrack()
     local PlayedTracksDatabase = ac.INIConfig.load(ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/" .. "data.ini")
@@ -606,11 +754,13 @@ function getNewTrack()
             
         end
 
-        if (not EnableSkipRepeatedTracks) or (not NextTrack2) or (NextTrack2 and NextTrack2[1] ~= CurrentlyPlaying and (attempts == 10 or (PlayedTracksDatabase:get("data", NextTrack1[1], 0) <= PlayedTracksDatabase:get("data", NextTrack2[1], 0)))) then
+        local nextTrackTitle, tagsAllowToPlay = readTrackTags(NextTrack1[1])
+
+        if tagsAllowToPlay and ((not EnableSkipRepeatedTracks) or (not NextTrack2) or (NextTrack2 and NextTrack2[1] ~= CurrentlyPlaying and (attempts == 10 or (PlayedTracksDatabase:get("data", nextTrackTitle, 0) <= PlayedTracksDatabase:get("data", NextTrack2[1], 0))))) then
             TrackChoosen = true
             FilePath = NextTrack1[2]
-            CurrentlyPlaying = NextTrack1[1]
-            PlayedTracksDatabase:set("data", NextTrack1[1], PlayedTracksDatabase:get("data", NextTrack1[1], 0)+1)
+            CurrentlyPlaying = nextTrackTitle
+            PlayedTracksDatabase:set("data", nextTrackTitle, PlayedTracksDatabase:get("data", nextTrackTitle, 0)+1)
             PlayedTracksDatabase:save()
         end
 
@@ -666,6 +816,11 @@ function script.update(dt)
     (not CurrentTrack or CurrentTrack:currentTime() >= CurrentTrack:duration() - 1) and 
     (Session.type ~= 3 or (Session.type == 3 and (Sim.timeToSessionStart < 0 or Sim.timeToSessionStart >= 60000))) then -- Prepare playing new track
         updateRaceStatusData()
+        if CurrentTrack then
+            CurrentTrack:setVolume(0)
+            CurrentTrack:setCurrentTime(CurrentTrack:duration())
+            CurrentVolume = 0
+        end
         CurrentTrack = ui.MediaPlayer(getNewTrack())
         TargetVolume = MaxVolume
         if StartMusic then
@@ -1052,8 +1207,16 @@ function KeybindsTab()
 end
 
 function DebugTab()
-    ui.text("CurrentlyPlaying: " .. CurrentlyPlaying)
-    ui.text("Playlist: " .. MusicType)
+    if CurrentlyPlaying then
+        ui.text("CurrentlyPlaying: " .. CurrentlyPlaying)
+    else
+        ui.text("CurrentlyPlaying: Nothing")
+    end
+    if MusicType then
+        ui.text("Playlist: " .. MusicType)
+    else
+        ui.text("Playlist: None")
+    end
     ui.text("Top Speed: " .. TopSpeed)
     ui.text("Average Speed: " .. AverageSpeed)
     ui.text("Crash Value: " .. HitValue)
@@ -1143,10 +1306,10 @@ function script.windowNowPlaying()
     local text2
     if not EnableNowPlayingTime then
         text1 = "Now Playing: "
-    elseif EnableNowPlayingTime then
+    elseif EnableNowPlayingTime and CurrentTrack then
         text1 = "Now Playing: " .. "(" .. string_formatTime(math.ceil(CurrentTrack:currentTime())) .. "/" .. string_formatTime(math.ceil(CurrentTrack:duration())) .. ") "
     end
-    text2 = CurrentlyPlaying
+    text2 = CurrentlyPlaying or ""
     local windowWidth = math.max(ui.measureDWriteText(text1, 25*NowPlayingWidgetSize, -1).x, ui.measureDWriteText(text2, 25*NowPlayingWidgetSize, -1).x)
     local windowWidth = vec2(windowWidth)
     ui.dwriteText(text1, 18*NowPlayingWidgetSize, rgbm(1, 1, 1, NowPlayingOpacityCurrent))
@@ -1163,7 +1326,7 @@ function script.windowNowPlaying()
         NowPlayingOpacityTarget = 0
     end
 
-    if NowPlayingOpacityTarget == 1 and (CurrentTrack:currentTime() > CurrentTrack:duration()-2 or CurrentTrack:currentTime() < 1 or (SessionSwitched or TrackSwitched)) then
+    if CurrentTrack and NowPlayingOpacityTarget == 1 and (CurrentTrack:currentTime() > CurrentTrack:duration()-2 or CurrentTrack:currentTime() < 1 or (SessionSwitched or TrackSwitched)) then
         NowPlayingOpacityTarget = 0
     end
 
