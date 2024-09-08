@@ -483,6 +483,9 @@ local trimmedWords = {
     "#Day",
     "#Night",
 
+    "#Rain",
+    "#Dry",
+
     "#PositionTop10",
     "#PositionTop20",
     "#PositionTop30",
@@ -551,12 +554,26 @@ local function readTrackTags(filename)
     ------------------------------------------------------------------------------------
 
     -- Daytime/Nighttime
-    if string.find(filename, "#Day") and ac.getSunAngle() >= 90 then -- night
+    if string.find(filename, "#Day") and string.find(filename, "#Night") then
+        
+    elseif string.find(filename, "#Day") and ac.getSunAngle() >= 88 then -- night
+        canPlay = false
+    elseif string.find(filename, "#Night") and ac.getSunAngle() <= 92 then -- day
         canPlay = false
     end
-    if string.find(filename, "#Night") and ac.getSunAngle() <= 90 then -- day
+
+
+
+    -- Rain/Dry
+    if string.find(filename, "#Rain") and string.find(filename, "#Dry") then
+    
+    elseif string.find(filename, "#Rain") and Sim.rainIntensity < 0.01 then -- dry
+        canPlay = false
+    elseif string.find(filename, "#Dry") and Sim.rainIntensity >= 0.01 then -- rainy
         canPlay = false
     end
+
+
 
     -- Position Top
     if string.find(filename, "#PositionTop1") and PositionIntensity < 1 then

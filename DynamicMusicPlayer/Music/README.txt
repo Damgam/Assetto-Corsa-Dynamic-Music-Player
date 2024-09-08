@@ -16,6 +16,8 @@ Certain modes now support tags!
 To use them, you put them in the filename, for example `Artist - Title #ProgressTop20`
 Tags can also be stacked, for example `Artist - Title #ProgressTop20 #PositionTop10`
 
+!!!!!!!!!!!!NOTE: TAGS ARE CASE SENSITIVE!!!!!!!!!!!!
+
 Valid tags won't be visible in the Now Playing widget track title.
 
 Available Tags are as follows:
@@ -24,6 +26,9 @@ Universal - Can be used in any mode.
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------
 #Day - Only play during daytime
 #Night - Only play during nighttime
+
+#Rain - Only play during rainy weather (Requires RainFX)
+#Dry - Only play when it's not raining
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------

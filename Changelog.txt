@@ -1,3 +1,7 @@
+3.0
+- Added new Tags system, allowing you to fine tune which music tracks play when. The system is going to be expanded with user suggestions. Currently allows to specify if a song should play only during the day, night, rain, dry, as well as in race sessions, allows to set filters for min/max position and min/max race progress.
+- Applied a bandaid that should prevent all cases of 2 (or more) tracks playing at once - currently playing track will be forced to be skipped to end before overwriting it with another.
+
 2.2
 - Now Playing widget will hide itself if there's no music playing, or if the track is ending, for a cleaner transition to new track.
 - Caution flag volume will kick in faster.
