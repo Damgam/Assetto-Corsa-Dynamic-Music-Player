@@ -26,9 +26,43 @@ Universal - Can be used in any mode.
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------
 #Day - Only play during daytime
 #Night - Only play during nighttime
-
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------
 #Rain - Only play during rainy weather (Requires RainFX)
 #Dry - Only play when it's not raining
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Car Production Year Based - Only play if the car was produced at least or at most this year. WARNING: If the car doesn't have a year defined, it assumes a year 2000!
+
+Minimum Year:
+"#YearMin1900",
+"#YearMin1910",
+"#YearMin1920",
+"#YearMin1930",
+"#YearMin1940",
+"#YearMin1950",
+"#YearMin1960",
+"#YearMin1970",
+"#YearMin1980",
+"#YearMin1990",
+"#YearMin2000",
+"#YearMin2010",
+"#YearMin2020",
+"#YearMin2030",
+
+Maximum Year:
+"#YearMax1900",
+"#YearMax1910",
+"#YearMax1920",
+"#YearMax1930",
+"#YearMax1940",
+"#YearMax1950",
+"#YearMax1960",
+"#YearMax1970",
+"#YearMax1980",
+"#YearMax1990",
+"#YearMax2000",
+"#YearMax2010",
+"#YearMax2020",
+"#YearMax2030",
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------
