@@ -185,6 +185,9 @@ end
 IdleMusicCounter = 0
 table.shuffle(IdleMusic)
 
+CoverArtDir = '/Music/CoverArts'
+CoverArts = table.map(io.scanDir( __dirname .. CoverArtDir, '*'), function (x) return { string.sub(x, 1, #x - 4), CoverArtDir .. '/' .. x } end)
+
 
 TargetVolume = -10
 TargetVolumeMultiplier = 1
@@ -525,6 +528,36 @@ local trimmedWords = {
     "#ProgressMax70",
     "#ProgressMax80",
     "#ProgressMax90",
+
+    "#YearMin1900",
+    "#YearMin1910",
+    "#YearMin1920",
+    "#YearMin1930",
+    "#YearMin1940",
+    "#YearMin1950",
+    "#YearMin1960",
+    "#YearMin1970",
+    "#YearMin1980",
+    "#YearMin1990",
+    "#YearMin2000",
+    "#YearMin2010",
+    "#YearMin2020",
+    "#YearMin2030",
+
+    "#YearMax1900",
+    "#YearMax1910",
+    "#YearMax1920",
+    "#YearMax1930",
+    "#YearMax1940",
+    "#YearMax1950",
+    "#YearMax1960",
+    "#YearMax1970",
+    "#YearMax1980",
+    "#YearMax1990",
+    "#YearMax2000",
+    "#YearMax2010",
+    "#YearMax2020",
+    "#YearMax2030",
 }
 
 local function readTrackTags(filename)
@@ -607,6 +640,7 @@ local function readTrackTags(filename)
             canPlay = false
         end
     end
+
     -- Progress Minimum
     if     string.find(filename, "#ProgressMin10") and ProgressIntensity < 0.1 or
            string.find(filename, "#ProgressMin20") and ProgressIntensity < 0.2 or
@@ -634,6 +668,42 @@ local function readTrackTags(filename)
         if MusicType == "race" then
             canPlay = false
         end
+    end
+
+    -- Car Production Year Minimum
+    local carProductionYear = ac.getCar(ac.getSim().focusedCar).year
+    if  string.find(filename, "#YearMin1900") and carProductionYear <= 1900 or
+        string.find(filename, "#YearMin1910") and carProductionYear <= 1910 or
+        string.find(filename, "#YearMin1920") and carProductionYear <= 1920 or
+        string.find(filename, "#YearMin1930") and carProductionYear <= 1930 or
+        string.find(filename, "#YearMin1940") and carProductionYear <= 1940 or
+        string.find(filename, "#YearMin1950") and carProductionYear <= 1950 or
+        string.find(filename, "#YearMin1960") and carProductionYear <= 1960 or
+        string.find(filename, "#YearMin1970") and carProductionYear <= 1970 or
+        string.find(filename, "#YearMin1980") and carProductionYear <= 1980 or
+        string.find(filename, "#YearMin1990") and carProductionYear <= 1990 or
+        string.find(filename, "#YearMin2000") and carProductionYear <= 2000 or
+        string.find(filename, "#YearMin2010") and carProductionYear <= 2010 or
+        string.find(filename, "#YearMin2020") and carProductionYear <= 2020 or
+        string.find(filename, "#YearMin2030") and carProductionYear <= 2030 then
+            canPlay = false
+    end
+
+    if  string.find(filename, "#YearMax1900") and carProductionYear >= 1900 or
+        string.find(filename, "#YearMax1910") and carProductionYear >= 1910 or
+        string.find(filename, "#YearMax1920") and carProductionYear >= 1920 or
+        string.find(filename, "#YearMax1930") and carProductionYear >= 1930 or
+        string.find(filename, "#YearMax1940") and carProductionYear >= 1940 or
+        string.find(filename, "#YearMax1950") and carProductionYear >= 1950 or
+        string.find(filename, "#YearMax1960") and carProductionYear >= 1960 or
+        string.find(filename, "#YearMax1970") and carProductionYear >= 1970 or
+        string.find(filename, "#YearMax1980") and carProductionYear >= 1980 or
+        string.find(filename, "#YearMax1990") and carProductionYear >= 1990 or
+        string.find(filename, "#YearMax2000") and carProductionYear >= 2000 or
+        string.find(filename, "#YearMax2010") and carProductionYear >= 2010 or
+        string.find(filename, "#YearMax2020") and carProductionYear >= 2020 or
+        string.find(filename, "#YearMax2030") and carProductionYear >= 2030 then
+            canPlay = false
     end
 
     return trimmedFilename, canPlay
@@ -787,6 +857,29 @@ function getNewTrack()
 
         if TrackChoosen then
             --ac.log(FilePath)
+
+            --if not nowplayingiconcoverart then
+                if io.fileExists(ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/Music/CoverArts/" .. CurrentlyPlaying .. ".png") then
+                    nowplayingiconcoverart = ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/Music/CoverArts/" .. CurrentlyPlaying .. ".png"
+                elseif io.fileExists(ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/Music/CoverArts/" .. CurrentlyPlaying .. ".jpg") then
+                    nowplayingiconcoverart = ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/Music/CoverArts/" .. CurrentlyPlaying .. ".jpg"
+                elseif io.fileExists(ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/Music/CoverArts/" .. CurrentlyPlaying .. ".jpeg") then
+                    nowplayingiconcoverart = ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/Music/CoverArts/" .. CurrentlyPlaying .. ".jpeg"
+                elseif io.fileExists(ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/Music/CoverArts/" .. CurrentlyPlaying .. ".gif") then
+                    nowplayingiconcoverart = ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/Music/CoverArts/" .. CurrentlyPlaying .. ".gif"
+                else
+                    nowplayingiconcoverart = nil
+                end
+            --end
+
+            if not nowplayingiconcoverart then
+                for i = 1,#CoverArts do
+                    if string.find(CurrentlyPlaying, CoverArts[i][1]) then
+                        nowplayingiconcoverart = ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer" .. CoverArts[i][2]
+                        break
+                    end
+                end
+            end
             break
         end
     end
@@ -1170,7 +1263,7 @@ function NowPlayingWidgetTab()
         NeedToSaveConfig = true
     end
 
-    checkbox = ui.checkbox("Enable Icon", EnableNowPlayingIcon)
+    checkbox = ui.checkbox("Enable Icon (Or Cover Art if available)", EnableNowPlayingIcon)
     if checkbox then
         EnableNowPlayingIcon = not EnableNowPlayingIcon
         ConfigFile:set("settings", "nowplayingicon", EnableNowPlayingIcon)
@@ -1178,7 +1271,7 @@ function NowPlayingWidgetTab()
     end
     
     if EnableNowPlayingIcon then
-        checkbox = ui.checkbox("Enable Animated Icon", EnableAnimatedNowPlayingIcon)
+        checkbox = ui.checkbox("Enable Animated Icon (Disables Cover Arts)", EnableAnimatedNowPlayingIcon)
         if checkbox then
             EnableAnimatedNowPlayingIcon = not EnableAnimatedNowPlayingIcon
             ConfigFile:set("settings", "nowplayinganimatedicon", EnableAnimatedNowPlayingIcon)
@@ -1309,7 +1402,12 @@ function script.windowNowPlaying()
             end
             windowWidthRange = 14*7
         else
-            ui.drawImage(nowplayingicon, vec2(10+10*NowPlayingWidgetSize,10+10*NowPlayingWidgetSize), vec2(10+70*NowPlayingWidgetSize,15+65*NowPlayingWidgetSize), rgbm(1, 1, 1, NowPlayingOpacityCurrent), vec2(1,1), vec2(0,0), ui.ImageFit.Fit)
+            if nowplayingiconcoverart then
+                ui.drawImage(nowplayingiconcoverart, vec2(10+10*NowPlayingWidgetSize,10+10*NowPlayingWidgetSize), vec2(10+70*NowPlayingWidgetSize,15+65*NowPlayingWidgetSize), rgbm(1, 1, 1, NowPlayingOpacityCurrent), vec2(0,0), vec2(1,1), ui.ImageFit.Fit)
+            else
+                ui.drawImage(nowplayingicon, vec2(10+10*NowPlayingWidgetSize,10+10*NowPlayingWidgetSize), vec2(10+70*NowPlayingWidgetSize,15+65*NowPlayingWidgetSize), rgbm(1, 1, 1, NowPlayingOpacityCurrent), vec2(1,1), vec2(0,0), ui.ImageFit.Fit)
+            end
+            
         end
     end
     ui.nextColumn()
