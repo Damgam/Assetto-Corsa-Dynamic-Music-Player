@@ -10,6 +10,11 @@ My recommendation would be to put driving music into the Other folder and pitsto
 
 If you want to get fancy, you can play around the ExternalMusicPaths.lua, there are instructions included in that file. Try not to break it though, that will brick the entire Music app.
 
+New in 3.1 - Cover Arts!
+You can now add images which will be showed as cover arts next to songs in Now Playing widget (Assuming you have the icon enabled and animated icon disabled.)
+To create a cover art, add image files that are named either after the full display name of the track (Artist - Title), or by partial name of track like for example just the artist. IT'S CASE SENSITIVE!
+The system will first look for strict, exactly matching name, and if it cannot find it, it will attempt to find a matching partial name. If it can't find either, it will fallback to default icon.
+Supports .png .jpg .jpeg .gif (pretty sure gifs won't be animated)
 
 New in 3.0 - Tags!
 Certain modes now support tags!
