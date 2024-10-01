@@ -16,6 +16,15 @@ function table_append(appendTarget, appendData)
     end
 end
 
+function table_copy(tbl)
+	local copy = {}
+	for key, value in pairs(tbl) do
+		copy[key] = value
+	end
+	return copy
+end
+
+
 function string_formatTime(seconds)
     local hours = math.floor(seconds / 3600)
     local minutes = math.floor((seconds % 3600) / 60)
@@ -88,7 +97,7 @@ ConfigMinimumSpeedVolume = ConfigFile:get("settings", "minspeedvolume", 0.5)
 ConfigMinimumPauseVolume = ConfigFile:get("settings", "minpausevolume", 0.1)
 
 EnableNowPlayingIcon = ConfigFile:get("settings", "nowplayingicon", true)
-EnableAnimatedNowPlayingIcon = ConfigFile:get("settings", "nowplayinganimatedicon", true)
+EnableAnimatedNowPlayingIcon = ConfigFile:get("settings", "nowplayinganimatedicon", false)
 EnableNowPlayingTime = ConfigFile:get("settings", "nowplayingtime", true)
 NowPlayingWidgetSize = ConfigFile:get("settings", "nowplayingscale", 1)
 EnableNowPlayingWidgetFadeout = ConfigFile:get("settings", "nowplayingfadeout", true)
@@ -107,6 +116,8 @@ if ExternalMusic and ExternalMusic.Other and ExternalMusic.Other[1] then
 end
 OtherMusicCounter = 0
 table.shuffle(OtherMusic)
+OtherMusicSorted = table_copy(OtherMusic)
+table.sort(OtherMusicSorted, function(a,b) return string.upper(a[1]) < string.upper(b[1]) end)
 
 RaceDir = '/Music/Race'
 RaceMusic = table.map(io.scanDir( __dirname .. RaceDir, '*'), function (x) return { string.sub(x, 1, #x - 4), RaceDir .. '/' .. x } end)
@@ -118,6 +129,8 @@ if ExternalMusic and ExternalMusic.Race and ExternalMusic.Race[1] then
 end
 RaceMusicCounter = 0
 table.shuffle(RaceMusic)
+RaceMusicSorted = table_copy(RaceMusic)
+table.sort(RaceMusicSorted, function(a,b) return string.upper(a[1]) < string.upper(b[1]) end)
 
 FinishDir = '/Music/Finish'
 FinishMusic = table.map(io.scanDir( __dirname .. FinishDir, '*'), function (x) return { string.sub(x, 1, #x - 4), FinishDir .. '/' .. x } end)
@@ -129,6 +142,8 @@ if ExternalMusic and ExternalMusic.Finish and ExternalMusic.Finish[1] then
 end
 FinishMusicCounter = 0
 table.shuffle(FinishMusic)
+FinishMusicSorted = table_copy(FinishMusic)
+table.sort(FinishMusicSorted, function(a,b) return string.upper(a[1]) < string.upper(b[1]) end)
 
 FinishPodiumDir = '/Music/FinishPodium'
 FinishPodiumMusic = table.map(io.scanDir( __dirname .. FinishPodiumDir, '*'), function (x) return { string.sub(x, 1, #x - 4), FinishPodiumDir .. '/' .. x } end)
@@ -140,6 +155,8 @@ if ExternalMusic and ExternalMusic.FinishPodium and ExternalMusic.FinishPodium[1
 end
 FinishPodiumMusicCounter = 0
 table.shuffle(FinishPodiumMusic)
+FinishPodiumMusicSorted = table_copy(FinishPodiumMusic)
+table.sort(FinishPodiumMusicSorted, function(a,b) return string.upper(a[1]) < string.upper(b[1]) end)
 
 ReplayDir = '/Music/Replay'
 ReplayMusic = table.map(io.scanDir( __dirname .. ReplayDir, '*'), function (x) return { string.sub(x, 1, #x - 4), ReplayDir .. '/' .. x } end)
@@ -151,6 +168,8 @@ if ExternalMusic and ExternalMusic.Replay and ExternalMusic.Replay[1] then
 end
 ReplayMusicCounter = 0
 table.shuffle(ReplayMusic)
+ReplayMusicSorted = table_copy(ReplayMusic)
+table.sort(ReplayMusicSorted, function(a,b) return string.upper(a[1]) < string.upper(b[1]) end)
 
 PracticeDir = '/Music/Practice'
 PracticeMusic = table.map(io.scanDir( __dirname .. PracticeDir, '*'), function (x) return { string.sub(x, 1, #x - 4), PracticeDir .. '/' .. x } end)
@@ -162,6 +181,8 @@ if ExternalMusic and ExternalMusic.Practice and ExternalMusic.Practice[1] then
 end
 PracticeMusicCounter = 0
 table.shuffle(PracticeMusic)
+PracticeMusicSorted = table_copy(PracticeMusic)
+table.sort(PracticeMusicSorted, function(a,b) return string.upper(a[1]) < string.upper(b[1]) end)
 
 QualificationDir = '/Music/Qualifying'
 QualificationMusic = table.map(io.scanDir( __dirname .. QualificationDir, '*'), function (x) return { string.sub(x, 1, #x - 4), QualificationDir .. '/' .. x } end)
@@ -173,6 +194,8 @@ if ExternalMusic and ExternalMusic.Qualification and ExternalMusic.Qualification
 end
 QualificationMusicCounter = 0
 table.shuffle(QualificationMusic)
+QualificationMusicSorted = table_copy(QualificationMusic)
+table.sort(QualificationMusicSorted, function(a,b) return string.upper(a[1]) < string.upper(b[1]) end)
 
 IdleDir = '/Music/Idle'
 IdleMusic = table.map(io.scanDir( __dirname .. IdleDir, '*'), function (x) return { string.sub(x, 1, #x - 4), IdleDir .. '/' .. x } end)
@@ -184,9 +207,12 @@ if ExternalMusic and ExternalMusic.Idle and ExternalMusic.Idle[1] then
 end
 IdleMusicCounter = 0
 table.shuffle(IdleMusic)
+IdleMusicSorted = table_copy(IdleMusic)
+table.sort(IdleMusicSorted, function(a,b) return string.upper(a[1]) < string.upper(b[1]) end)
 
 CoverArtDir = '/Music/CoverArts'
 CoverArts = table.map(io.scanDir( __dirname .. CoverArtDir, '*'), function (x) return { string.sub(x, 1, #x - 4), CoverArtDir .. '/' .. x } end)
+CoverArtConfig = require('Music/CoverArtConfig')
 
 
 TargetVolume = -10
@@ -431,7 +457,7 @@ function updateRaceStatusData()
         end
     end
 
-    if MusicType and (
+    if MusicType and DontSkipCurrentTrack == false and (
     (MusicType  == "replay" and (not Sim.isReplayActive) and EnableReplayPlaylist) or -- We're not in replay but replay music is playing
     (MusicType  ~= "replay" and Sim.isReplayActive and EnableReplayPlaylist) or -- We're in replay but replay music is not playing
     (MusicType  == "idle" and PlayerCarSpeed >= 1 and (not (Car.isInPitlane or Car.isInPit))) or -- Idle Music is playing but we're moving
@@ -578,9 +604,17 @@ local function readTrackTags(filename)
     for i = 1,#trimmedWords do
         if string.find(trimmedFilename, trimmedWords[i]) then
             trimmedFilename = string.gsub(trimmedFilename, trimmedWords[i], "")
-            trimmedFilename = string.gsub(trimmedFilename, "  ", " ")
         end
     end
+
+    for i = 1,100 do
+        trimmedFilename = string.gsub(trimmedFilename, "  ", " ")
+        if string.sub(trimmedFilename, -1, -1) == " " then
+            trimmedFilename = string.sub(trimmedFilename, 1, -2)
+        end
+    end
+
+    ac.log("trimmedFilename", "'" .. trimmedFilename .. "'")
 
     ------------------------------------------------------------------------------------
     -- Allow to play:
@@ -707,6 +741,72 @@ local function readTrackTags(filename)
     end
 
     return trimmedFilename, canPlay
+end
+
+for i = 1,#PracticeMusic do
+    PracticeMusic[i][3] = readTrackTags(PracticeMusic[i][1])
+    PracticeMusicSorted[i][3] = readTrackTags(PracticeMusicSorted[i][1])
+end
+for i = 1,#QualificationMusic do
+    QualificationMusic[i][3] = readTrackTags(QualificationMusic[i][1])
+    QualificationMusicSorted[i][3] = readTrackTags(QualificationMusicSorted[i][1])
+end
+for i = 1,#RaceMusic do
+    RaceMusic[i][3] = readTrackTags(RaceMusic[i][1])
+    RaceMusicSorted[i][3] = readTrackTags(RaceMusicSorted[i][1])
+end
+for i = 1,#IdleMusic do
+    IdleMusic[i][3] = readTrackTags(IdleMusic[i][1])
+    IdleMusicSorted[i][3] = readTrackTags(IdleMusicSorted[i][1])
+end
+for i = 1,#FinishMusic do
+    FinishMusic[i][3] = readTrackTags(FinishMusic[i][1])
+    FinishMusicSorted[i][3] = readTrackTags(FinishMusicSorted[i][1])
+end
+for i = 1,#FinishPodiumMusic do
+    FinishPodiumMusic[i][3] = readTrackTags(FinishPodiumMusic[i][1])
+    FinishPodiumMusicSorted[i][3] = readTrackTags(FinishPodiumMusicSorted[i][1])
+end
+for i = 1,#ReplayMusic do
+    ReplayMusic[i][3] = readTrackTags(ReplayMusic[i][1])
+    ReplayMusicSorted[i][3] = readTrackTags(ReplayMusicSorted[i][1])
+end
+for i = 1,#OtherMusic do
+    OtherMusic[i][3] = readTrackTags(OtherMusic[i][1])
+    OtherMusicSorted[i][3] = readTrackTags(OtherMusicSorted[i][1])
+end
+
+function getCoverArt(track)
+    nowplayingiconcoverart = nil
+
+    if CoverArtConfig[CurrentlyPlaying] and CoverArtConfig[CurrentlyPlaying] == "blank" then
+        nowplayingiconcoverart = ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/" .. "icon.png"
+    end
+    
+    if CoverArtConfig[CurrentlyPlaying] and io.fileExists(ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/Music/CoverArts/" .. CoverArtConfig[CurrentlyPlaying]) then
+        nowplayingiconcoverart = ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/Music/CoverArts/" .. CoverArtConfig[CurrentlyPlaying]
+    end
+    
+    if not nowplayingiconcoverart == nil then
+        if io.fileExists(ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/Music/CoverArts/" .. CurrentlyPlaying .. ".png") then
+            nowplayingiconcoverart = ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/Music/CoverArts/" .. CurrentlyPlaying .. ".png"
+        elseif io.fileExists(ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/Music/CoverArts/" .. CurrentlyPlaying .. ".jpg") then
+            nowplayingiconcoverart = ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/Music/CoverArts/" .. CurrentlyPlaying .. ".jpg"
+        elseif io.fileExists(ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/Music/CoverArts/" .. CurrentlyPlaying .. ".jpeg") then
+            nowplayingiconcoverart = ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/Music/CoverArts/" .. CurrentlyPlaying .. ".jpeg"
+        elseif io.fileExists(ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/Music/CoverArts/" .. CurrentlyPlaying .. ".gif") then
+            nowplayingiconcoverart = ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/Music/CoverArts/" .. CurrentlyPlaying .. ".gif"
+        end
+    end
+    
+    if not nowplayingiconcoverart then
+        for i = 1,#CoverArts do
+            if string.find(CurrentlyPlaying, CoverArts[i][1]) then
+                nowplayingiconcoverart = ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer" .. CoverArts[i][2]
+                break
+            end
+        end
+    end
 end
 
 function getNewTrack()
@@ -857,29 +957,7 @@ function getNewTrack()
 
         if TrackChoosen then
             --ac.log(FilePath)
-
-            --if not nowplayingiconcoverart then
-                if io.fileExists(ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/Music/CoverArts/" .. CurrentlyPlaying .. ".png") then
-                    nowplayingiconcoverart = ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/Music/CoverArts/" .. CurrentlyPlaying .. ".png"
-                elseif io.fileExists(ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/Music/CoverArts/" .. CurrentlyPlaying .. ".jpg") then
-                    nowplayingiconcoverart = ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/Music/CoverArts/" .. CurrentlyPlaying .. ".jpg"
-                elseif io.fileExists(ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/Music/CoverArts/" .. CurrentlyPlaying .. ".jpeg") then
-                    nowplayingiconcoverart = ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/Music/CoverArts/" .. CurrentlyPlaying .. ".jpeg"
-                elseif io.fileExists(ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/Music/CoverArts/" .. CurrentlyPlaying .. ".gif") then
-                    nowplayingiconcoverart = ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/Music/CoverArts/" .. CurrentlyPlaying .. ".gif"
-                else
-                    nowplayingiconcoverart = nil
-                end
-            --end
-
-            if not nowplayingiconcoverart then
-                for i = 1,#CoverArts do
-                    if string.find(CurrentlyPlaying, CoverArts[i][1]) then
-                        nowplayingiconcoverart = ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer" .. CoverArts[i][2]
-                        break
-                    end
-                end
-            end
+            getCoverArt(CurrentlyPlaying)
             break
         end
     end
@@ -942,6 +1020,8 @@ function script.update(dt)
         CurrentVolume = math.max(0, CurrentVolume)
         CurrentTrack:setVolume(CurrentVolume)
         CurrentTrack:play()
+        DontSkipCurrentTrack = false
+        NowPlayingOpacityCurrent = 0
         if SessionSwitched then -- Session has switched and we just started new track for it
             SessionSwitched = false
         end
@@ -985,6 +1065,8 @@ function script.update(dt)
                     CurrentVolume = math.max(0, CurrentVolume)
                     CurrentTrack:setVolume(CurrentVolume)
                     CurrentTrack:play()
+                    DontSkipCurrentTrack = false
+                    NowPlayingOpacityCurrent = 0
                     if SessionSwitched then -- Session has switched and we just started new track for it
                         SessionSwitched = false
                     end
@@ -1021,9 +1103,128 @@ function TabsFunction()
     ui.tabItem("Behaviour", {}, BehaviourTab)
     ui.tabItem("NowPlaying Widget", {}, NowPlayingWidgetTab)
     ui.tabItem("Keybinds", {}, KeybindsTab)
+    ui.tabItem("Music List", {}, MusicListTab)
     ui.tabItem("Debug", {}, DebugTab)
-    
 end
+
+function PlaySelectedTrack(selectedTrack)
+    CurrentTrack:setVolume(0)
+    CurrentTrack:setCurrentTime(CurrentTrack:duration())
+    CurrentTrack = ui.MediaPlayer(selectedTrack[2])
+    CurrentVolume = TargetVolume*TargetVolumeMultiplier
+    CurrentTrack:setVolume(CurrentVolume)
+    CurrentTrack:play()
+    CurrentlyPlaying = selectedTrack[3]
+    DontSkipCurrentTrack = true
+    NowPlayingOpacityCurrent = 0
+    getCoverArt(CurrentlyPlaying)
+end
+
+function HandleMusicListItem(item)
+    ui.text(item[3])
+    if ui.itemHovered() then
+        ui.setTooltip('Left Mouse Button to play, Right Mouse Button to copy to Clipboard')
+    end
+    if ui.itemClicked(ui.MouseButton.Right, false) then
+        ac.setClipboadText(item[3])
+    end
+    if ui.itemClicked(ui.MouseButton.Left, false) then
+        PlaySelectedTrack(item)
+    end
+end
+
+function MusicListTab()
+    ui.tabBar("MusicListItems", {}, MusicListTypes)
+end
+
+function MusicListTypes()
+    ui.tabItem("Idle", {}, MusicListTabIdle)
+    ui.tabItem("Practice", {}, MusicListTabPractice)
+    ui.tabItem("Qualification", {}, MusicListTabQualification)
+    ui.tabItem("Race", {}, MusicListTabRace)
+    ui.tabItem("Finish", {}, MusicListTabFinish)
+    ui.tabItem("FinishPodium", {}, MusicListTabFinishPodium)
+    ui.tabItem("Replay", {}, MusicListTabReplay)
+end
+
+function MusicListTabIdle()
+    if #IdleMusicSorted == 0 then
+        for i = 1,#OtherMusicSorted do
+            HandleMusicListItem(OtherMusicSorted[i])
+        end
+    end
+    for i = 1,#IdleMusicSorted do
+        HandleMusicListItem(IdleMusicSorted[i])
+    end
+end
+
+function MusicListTabPractice()
+    if #PracticeMusicSorted == 0 then
+        for i = 1,#OtherMusicSorted do
+            HandleMusicListItem(OtherMusicSorted[i])
+        end
+    end
+    for i = 1,#PracticeMusicSorted do
+        HandleMusicListItem(PracticeMusicSorted[i])
+    end
+end
+
+function MusicListTabQualification()
+    if #QualificationMusicSorted == 0 then
+        for i = 1,#OtherMusicSorted do
+            HandleMusicListItem(OtherMusicSorted[i])
+        end
+    end
+    for i = 1,#QualificationMusicSorted do
+        HandleMusicListItem(QualificationMusicSorted[i])
+    end
+end
+
+function MusicListTabRace()
+    if #RaceMusicSorted == 0 then
+        for i = 1,#OtherMusicSorted do
+            HandleMusicListItem(OtherMusicSorted[i])
+        end
+    end
+    for i = 1,#RaceMusicSorted do
+        HandleMusicListItem(RaceMusicSorted[i])
+    end
+end
+
+function MusicListTabFinish()
+    if #FinishMusicSorted == 0 then
+        for i = 1,#OtherMusicSorted do
+            HandleMusicListItem(OtherMusicSorted[i])
+        end
+    end
+    for i = 1,#FinishMusicSorted do
+        HandleMusicListItem(FinishMusicSorted[i])
+    end
+end
+
+function MusicListTabFinishPodium()
+    if #FinishPodiumMusicSorted == 0 then
+        for i = 1,#OtherMusicSorted do
+            HandleMusicListItem(OtherMusicSorted[i])
+        end
+    end
+    for i = 1,#FinishPodiumMusicSorted do
+        HandleMusicListItem(FinishPodiumMusicSorted[i])
+    end
+end
+
+function MusicListTabReplay()
+    if #ReplayMusicSorted == 0 then
+        for i = 1,#OtherMusicSorted do
+            HandleMusicListItem(OtherMusicSorted[i])
+        end
+    end
+    for i = 1,#ReplayMusicSorted do
+        HandleMusicListItem(ReplayMusicSorted[i])
+    end
+end
+
+
 
 -- function VolumeTab()
 
