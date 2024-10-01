@@ -12,16 +12,16 @@ local CoverArts = {
 
     -- ["YetAnotherArtist - YetAnotherTitle"] = "blank", -- You can set it to "blank" to remove a 'false positive' partial match
 
-    ["Hot Action Cop - Going down on it"] = "Need For Speed Hot Pursuit 2.png",
-    ["Hot Action Cop - Fever for the flava"] = "Need For Speed Hot Pursuit 2.png",
-    ["The Buzzhorn - Ordinary"] = "Need For Speed Hot Pursuit 2.png",
-    ["Course of nature - Wall of shame"] = "Need For Speed Hot Pursuit 2.png",
-    ["Humble brothers - Brake stand"] = "Need For Speed Hot Pursuit 2.png",
-    ["Humble Brothers - Black Hole"] = "Need For Speed Hot Pursuit 2.png",
-    ["Rush - One Little Victory"] = "Need For Speed Hot Pursuit 2.png",
-    ["Matt Ragan - Cone Of Silence"] = "Need For Speed Hot Pursuit 2.png",
-    ["Bush - The People That We Love"] = "Need For Speed Hot Pursuit 2.png",
-    ["Pulse Ultra - Build Your Cages"] = "Need For Speed Hot Pursuit 2.png",
+    -- ["Hot Action Cop - Going down on it"] = "Need For Speed Hot Pursuit 2.png",
+    -- ["Hot Action Cop - Fever for the flava"] = "Need For Speed Hot Pursuit 2.png",
+    -- ["The Buzzhorn - Ordinary"] = "Need For Speed Hot Pursuit 2.png",
+    -- ["Course of nature - Wall of shame"] = "Need For Speed Hot Pursuit 2.png",
+    -- ["Humble brothers - Brake stand"] = "Need For Speed Hot Pursuit 2.png",
+    -- ["Humble Brothers - Black Hole"] = "Need For Speed Hot Pursuit 2.png",
+    -- ["Rush - One Little Victory"] = "Need For Speed Hot Pursuit 2.png",
+    -- ["Matt Ragan - Cone Of Silence"] = "Need For Speed Hot Pursuit 2.png",
+    -- ["Bush - The People That We Love"] = "Need For Speed Hot Pursuit 2.png",
+    -- ["Pulse Ultra - Build Your Cages"] = "Need For Speed Hot Pursuit 2.png",
 }
 
 return CoverArts
