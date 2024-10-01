@@ -15,6 +15,7 @@ You can now add images which will be showed as cover arts next to songs in Now P
 To create a cover art, add image files that are named either after the full display name of the track (Artist - Title), or by partial name of track like for example just the artist. IT'S CASE SENSITIVE!
 The system will first look for strict, exactly matching name, and if it cannot find it, it will attempt to find a matching partial name. If it can't find either, it will fallback to default icon.
 Supports .png .jpg .jpeg .gif (pretty sure gifs won't be animated)
+Since 3.2 you can use ingame Music List (you can find it in the settings app) to copy track names to clipboard and check which ones have cover arts!
 
 New in 3.0 - Tags!
 Certain modes now support tags!

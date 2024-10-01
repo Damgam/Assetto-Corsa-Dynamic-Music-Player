@@ -225,6 +225,8 @@ FadeInSpeedMultiplier = 1
 FadeOutSpeedMultiplier = 1
 
 StartMusic = false
+MusicQueue = {}
+CoverArtCache = {}
 
 Sim                         = ac.getSim()
 Car                         = ac.getCar(Sim.focusedCar)
@@ -457,7 +459,7 @@ function updateRaceStatusData()
         end
     end
 
-    if MusicType and DontSkipCurrentTrack == false and (
+    if MusicType and ((not DontSkipCurrentTrack) or TrackSwitched) and (
     (MusicType  == "replay" and (not Sim.isReplayActive) and EnableReplayPlaylist) or -- We're not in replay but replay music is playing
     (MusicType  ~= "replay" and Sim.isReplayActive and EnableReplayPlaylist) or -- We're in replay but replay music is not playing
     (MusicType  == "idle" and PlayerCarSpeed >= 1 and (not (Car.isInPitlane or Car.isInPit))) or -- Idle Music is playing but we're moving
@@ -777,36 +779,39 @@ for i = 1,#OtherMusic do
 end
 
 function getCoverArt(track)
-    nowplayingiconcoverart = nil
+    local CoverArtForThisTrack = false
+    if CoverArtCache[track] ~= nil then return CoverArtCache[track] end
 
-    if CoverArtConfig[CurrentlyPlaying] and CoverArtConfig[CurrentlyPlaying] == "blank" then
-        nowplayingiconcoverart = ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/" .. "icon.png"
+    if CoverArtConfig[track] and CoverArtConfig[track] == "blank" then
+        CoverArtForThisTrack = ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/" .. "icon.png"
     end
     
-    if CoverArtConfig[CurrentlyPlaying] and io.fileExists(ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/Music/CoverArts/" .. CoverArtConfig[CurrentlyPlaying]) then
-        nowplayingiconcoverart = ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/Music/CoverArts/" .. CoverArtConfig[CurrentlyPlaying]
+    if CoverArtConfig[track] and io.fileExists(ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/Music/CoverArts/" .. CoverArtConfig[track]) then
+        CoverArtForThisTrack = ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/Music/CoverArts/" .. CoverArtConfig[track]
     end
     
-    if not nowplayingiconcoverart == nil then
-        if io.fileExists(ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/Music/CoverArts/" .. CurrentlyPlaying .. ".png") then
-            nowplayingiconcoverart = ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/Music/CoverArts/" .. CurrentlyPlaying .. ".png"
-        elseif io.fileExists(ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/Music/CoverArts/" .. CurrentlyPlaying .. ".jpg") then
-            nowplayingiconcoverart = ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/Music/CoverArts/" .. CurrentlyPlaying .. ".jpg"
-        elseif io.fileExists(ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/Music/CoverArts/" .. CurrentlyPlaying .. ".jpeg") then
-            nowplayingiconcoverart = ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/Music/CoverArts/" .. CurrentlyPlaying .. ".jpeg"
-        elseif io.fileExists(ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/Music/CoverArts/" .. CurrentlyPlaying .. ".gif") then
-            nowplayingiconcoverart = ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/Music/CoverArts/" .. CurrentlyPlaying .. ".gif"
+    if not CoverArtForThisTrack then
+        if io.fileExists(ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/Music/CoverArts/" .. track .. ".png") then
+            CoverArtForThisTrack = ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/Music/CoverArts/" .. track .. ".png"
+        elseif io.fileExists(ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/Music/CoverArts/" .. track .. ".jpg") then
+            CoverArtForThisTrack = ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/Music/CoverArts/" .. track .. ".jpg"
+        elseif io.fileExists(ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/Music/CoverArts/" .. track .. ".jpeg") then
+            CoverArtForThisTrack = ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/Music/CoverArts/" .. track .. ".jpeg"
+        elseif io.fileExists(ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/Music/CoverArts/" .. track .. ".gif") then
+            CoverArtForThisTrack = ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/Music/CoverArts/" .. track .. ".gif"
         end
     end
     
-    if not nowplayingiconcoverart then
+    if not CoverArtForThisTrack then
         for i = 1,#CoverArts do
-            if string.find(CurrentlyPlaying, CoverArts[i][1]) then
-                nowplayingiconcoverart = ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer" .. CoverArts[i][2]
+            if string.find(track, CoverArts[i][1]) then
+                CoverArtForThisTrack = ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer" .. CoverArts[i][2]
                 break
             end
         end
     end
+    CoverArtCache[track] = CoverArtForThisTrack
+    return CoverArtForThisTrack
 end
 
 function getNewTrack()
@@ -957,7 +962,7 @@ function getNewTrack()
 
         if TrackChoosen then
             --ac.log(FilePath)
-            getCoverArt(CurrentlyPlaying)
+            nowplayingiconcoverart = getCoverArt(CurrentlyPlaying)
             break
         end
     end
@@ -1009,7 +1014,13 @@ function script.update(dt)
             CurrentTrack:setCurrentTime(CurrentTrack:duration())
             CurrentVolume = 0
         end
-        CurrentTrack = ui.MediaPlayer(getNewTrack())
+        if #MusicQueue == 0 then
+            CurrentTrack = ui.MediaPlayer(getNewTrack())
+            DontSkipCurrentTrack = false
+        else
+            PlaySelectedTrack(MusicQueue[1])
+            table.remove(MusicQueue, 1)
+        end
         TargetVolume = MaxVolume
         if StartMusic then
             CurrentVolume = TargetVolume*TargetVolumeMultiplier
@@ -1020,7 +1031,6 @@ function script.update(dt)
         CurrentVolume = math.max(0, CurrentVolume)
         CurrentTrack:setVolume(CurrentVolume)
         CurrentTrack:play()
-        DontSkipCurrentTrack = false
         NowPlayingOpacityCurrent = 0
         if SessionSwitched then -- Session has switched and we just started new track for it
             SessionSwitched = false
@@ -1054,7 +1064,13 @@ function script.update(dt)
                 --ac.log("SkipAttempts", SkipAttempts)
                 if EnableMusic and SkipAttempts > 20 and (Session.type ~= 3 or (Session.type == 3 and (Sim.timeToSessionStart < 0 or Sim.timeToSessionStart >= 60000))) and HitValue == 0 then
                     updateRaceStatusData()
-                    CurrentTrack = ui.MediaPlayer(getNewTrack())
+                    if #MusicQueue == 0 then
+                        CurrentTrack = ui.MediaPlayer(getNewTrack())
+                        DontSkipCurrentTrack = false
+                    else
+                        PlaySelectedTrack(MusicQueue[1])
+                        table.remove(MusicQueue, 1)
+                    end
                     TargetVolume = MaxVolume
                     if StartMusic then
                         CurrentVolume = TargetVolume*TargetVolumeMultiplier
@@ -1065,7 +1081,6 @@ function script.update(dt)
                     CurrentVolume = math.max(0, CurrentVolume)
                     CurrentTrack:setVolume(CurrentVolume)
                     CurrentTrack:play()
-                    DontSkipCurrentTrack = false
                     NowPlayingOpacityCurrent = 0
                     if SessionSwitched then -- Session has switched and we just started new track for it
                         SessionSwitched = false
@@ -1117,20 +1132,43 @@ function PlaySelectedTrack(selectedTrack)
     CurrentlyPlaying = selectedTrack[3]
     DontSkipCurrentTrack = true
     NowPlayingOpacityCurrent = 0
-    getCoverArt(CurrentlyPlaying)
+    nowplayingiconcoverart = getCoverArt(CurrentlyPlaying)
 end
 
 function HandleMusicListItem(item)
-    ui.text(item[3])
+    ui.button("▶")
     if ui.itemHovered() then
-        ui.setTooltip('Left Mouse Button to play, Right Mouse Button to copy to Clipboard')
-    end
-    if ui.itemClicked(ui.MouseButton.Right, false) then
-        ac.setClipboadText(item[3])
+        ui.setTooltip('Play Now')
     end
     if ui.itemClicked(ui.MouseButton.Left, false) then
         PlaySelectedTrack(item)
     end
+    ui.sameLine()
+    ui.button("⏫")
+    if ui.itemHovered() then
+        ui.setTooltip('Add To Queue')
+    end
+    if ui.itemClicked(ui.MouseButton.Left, false) then
+        table.insert(MusicQueue, item)
+    end
+    ui.sameLine()
+    if CoverArtCache[item[3]] == nil then
+        getCoverArt(item[3])
+    end
+    if CoverArtCache[item[3]] ~= false then
+        ui.image(CoverArtCache[item[3]], 22)
+    else
+        ui.image(ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/" .. "icon.png", 22)
+    end
+    ui.sameLine()
+    ui.button(item[3])
+    if ui.itemHovered() then
+        ui.setTooltip('Copy Name To Clipboard')
+    end
+    if ui.itemClicked(ui.MouseButton.Right, false) then
+        ac.setClipboadText(item[3])
+    end
+    ui.separator()
 end
 
 function MusicListTab()
@@ -1145,6 +1183,8 @@ function MusicListTypes()
     ui.tabItem("Finish", {}, MusicListTabFinish)
     ui.tabItem("FinishPodium", {}, MusicListTabFinishPodium)
     ui.tabItem("Replay", {}, MusicListTabReplay)
+    ui.tabItem("Other", {}, MusicListTabOther)
+    ui.tabItem("Queue", {}, MusicListTabQueue)
 end
 
 function MusicListTabIdle()
@@ -1224,11 +1264,61 @@ function MusicListTabReplay()
     end
 end
 
+function MusicListTabOther()
+    for i = 1,#OtherMusicSorted do
+        HandleMusicListItem(OtherMusicSorted[i])
+    end
+end
 
-
--- function VolumeTab()
-
--- end
+function MusicListTabQueue()
+    for i = 1, #MusicQueue do
+        if MusicQueue[i] then
+            ui.button("🔼")
+            if ui.itemHovered() then
+                ui.setTooltip('Push To Top')
+            end
+            if ui.itemClicked(ui.MouseButton.Left, false) then
+                table.insert(MusicQueue, 1, MusicQueue[i])
+                table.remove(MusicQueue, i+1)
+            end
+            ui.sameLine()
+            ui.button("🔽")
+            if ui.itemHovered() then
+                ui.setTooltip('Push To Bottom')
+            end
+            if ui.itemClicked(ui.MouseButton.Left, false) then
+                table.insert(MusicQueue, MusicQueue[i])
+                table.remove(MusicQueue, i)
+            end
+            ui.sameLine()
+            ui.button("🚫")
+            if ui.itemHovered() then
+                ui.setTooltip('Remove From Queue')
+            end
+            if ui.itemClicked(ui.MouseButton.Left, false) then
+                table.remove(MusicQueue, i)
+            end
+            ui.sameLine()
+            if CoverArtCache[MusicQueue[i][3]] == nil then
+                getCoverArt(MusicQueue[i][3])
+            end
+            if CoverArtCache[MusicQueue[i][3]] ~= false then
+                ui.image(CoverArtCache[MusicQueue[i][3]], 22)
+            else
+                ui.image(ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/" .. "icon.png", 22)
+            end
+            ui.sameLine()
+            ui.button(i .. ". " .. MusicQueue[i][3])
+            if ui.itemHovered() then
+                ui.setTooltip('Copy Name To Clipboard')
+            end
+            if ui.itemClicked(ui.MouseButton.Right, false) then
+                ac.setClipboadText(MusicQueue[i][3])
+            end
+            ui.separator()
+        end
+    end
+end
 
 function SessionsTab()
     if PracticeMusic[1] then
@@ -1563,7 +1653,7 @@ function script.windowMain()
     end
 end
 
-ac.setWindowSizeConstraints('main', vec2(550,100), vec2(550,1000))
+ac.setWindowSizeConstraints('main', vec2(650,100), vec2(650,600))
 local nowplayingicon = ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/" .. "iconFlipped.png"
 local nowplayingbar = ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/" .. "nowplayingbar.png"
 -- Now Playing

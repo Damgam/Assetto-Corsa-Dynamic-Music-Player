@@ -2,7 +2,7 @@
 -- Uses DISPLAY TITLE to match files!!!, not the filename of the song!!! That includes removing all the tags, and all the double+ spaces as well as the space at the end of the filename. It is also case sensitive!
 -- In case you make a typo here, don't worry, the app won't break, but the cover art won't display. If you make a syntax error however, the whole app will break, so make sure to put a , at the end of every entry!
 
--- In the ingame settings app, you can now find list of tracks loaded by the app. You can copy it's exact display name into clipboard by right clicking on it on the list.
+-- In the ingame settings app, you can now find list of tracks loaded by the app. You can copy it's exact display name to clipboard by clicking on it, and paste it here.
 
 local CoverArts = {
     -- Example:

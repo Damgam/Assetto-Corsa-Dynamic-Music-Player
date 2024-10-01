@@ -1,7 +1,8 @@
 3.2
 - Added new CoverArt config which allows you to manually match songs with cover arts. Instructions how to use it are included in the file, works in similar way as ExternalMusicPaths config
 - Added new tab in the settings app, which allows you to look through your playlist, play track you want or copy it's display name to clipboard (to help with Cover Art setup)
-- (NOT DONE YET) Additionally, the above comes with a Queue function, allowing you to manually queue up tracks to play next. Might be useful if you want to play some specific music for the race, or a video. Also comes with a Queue tab where you can remove songs from the queue or change their order.
+- Additionally, the above comes with a Queue function, allowing you to manually queue up tracks to play next. Might be useful if you want to play some specific music for the race, or a video. Also comes with a Queue tab where you can remove songs from the queue or change their order.
+- Animated icon is now disabled by default to allow Cover Arts to be default visible.
 
 3.1
 - Added tags which allow you to disable specific music tracks depending on production year of the car.
