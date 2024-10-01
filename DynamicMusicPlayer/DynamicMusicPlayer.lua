@@ -1165,7 +1165,7 @@ function HandleMusicListItem(item)
     if ui.itemHovered() then
         ui.setTooltip('Copy Name To Clipboard')
     end
-    if ui.itemClicked(ui.MouseButton.Right, false) then
+    if ui.itemClicked(ui.MouseButton.Left, false) then
         ac.setClipboadText(item[3])
     end
     ui.separator()
@@ -1312,7 +1312,7 @@ function MusicListTabQueue()
             if ui.itemHovered() then
                 ui.setTooltip('Copy Name To Clipboard')
             end
-            if ui.itemClicked(ui.MouseButton.Right, false) then
+            if ui.itemClicked(ui.MouseButton.Left, false) then
                 ac.setClipboadText(MusicQueue[i][3])
             end
             ui.separator()
