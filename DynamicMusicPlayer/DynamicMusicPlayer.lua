@@ -1014,7 +1014,7 @@ function script.update(dt)
             CurrentTrack:setCurrentTime(CurrentTrack:duration())
             CurrentVolume = 0
         end
-        if #MusicQueue == 0 then
+        if #MusicQueue == 0 or (PlayerFinished and (not PlayedFinishTrack) and FinishMusic[1]) then
             CurrentTrack = ui.MediaPlayer(getNewTrack())
             DontSkipCurrentTrack = false
         else
@@ -1064,7 +1064,7 @@ function script.update(dt)
                 --ac.log("SkipAttempts", SkipAttempts)
                 if EnableMusic and SkipAttempts > 20 and (Session.type ~= 3 or (Session.type == 3 and (Sim.timeToSessionStart < 0 or Sim.timeToSessionStart >= 60000))) and HitValue == 0 then
                     updateRaceStatusData()
-                    if #MusicQueue == 0 then
+                    if #MusicQueue == 0 or (PlayerFinished and (not PlayedFinishTrack) and FinishMusic[1])  then
                         CurrentTrack = ui.MediaPlayer(getNewTrack())
                         DontSkipCurrentTrack = false
                     else
