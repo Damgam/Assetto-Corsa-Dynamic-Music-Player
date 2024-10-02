@@ -459,7 +459,7 @@ function updateRaceStatusData()
         end
     end
 
-    if MusicType and ((not DontSkipCurrentTrack) or TrackSwitched) and (
+    if MusicType and ((not DontSkipCurrentTrack) or TrackSwitched or (PlayerFinished and (not PlayedFinishTrack) and FinishMusic[1])) and (
     (MusicType  == "replay" and (not Sim.isReplayActive) and EnableReplayPlaylist) or -- We're not in replay but replay music is playing
     (MusicType  ~= "replay" and Sim.isReplayActive and EnableReplayPlaylist) or -- We're in replay but replay music is not playing
     (MusicType  == "idle" and PlayerCarSpeed >= 1 and (not (Car.isInPitlane or Car.isInPit))) or -- Idle Music is playing but we're moving
