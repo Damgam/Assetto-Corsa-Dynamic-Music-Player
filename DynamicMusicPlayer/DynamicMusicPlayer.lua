@@ -89,7 +89,6 @@ EnableDynamicProximityVolume = ConfigFile:get("settings", "proximityfadeout", tr
 EnableDynamicSpeedVolume = ConfigFile:get("settings", "speedfadeout", true) -- turn down music volume depending on speed of your car
 EnableDynamicCrashingVolume = ConfigFile:get("settings", "crashingfadeout", true) -- turn down music volume when you crash
 EnableDynamicCrashingTrackSkip = ConfigFile:get("settings", "crashingfadeouttrackskip", false) -- turn down music volume when you crash
-EnableSkipRepeatedTracks = ConfigFile:get("settings", "skiprepeatedtracks", false)
 
 ConfigMinimumCautionVolume = ConfigFile:get("settings", "mincautionvolume", 0.1)
 ConfigMinimumProximityVolume = ConfigFile:get("settings", "minproximityvolume", 0.5)
@@ -102,6 +101,8 @@ EnableNowPlayingTime = ConfigFile:get("settings", "nowplayingtime", true)
 NowPlayingWidgetSize = ConfigFile:get("settings", "nowplayingscale", 1)
 EnableNowPlayingWidgetFadeout = ConfigFile:get("settings", "nowplayingfadeout", true)
 NowPlayingWidgetFadeoutTime = ConfigFile:get("settings", "nowplayingfadeouttime", 10)
+
+MusicListHideWithCoverArt = ConfigFile:get("settings", "musiclisthidewithcoverart", false)
 
 
 ExternalMusic = require('Music/ExternalMusicPaths')
@@ -815,7 +816,6 @@ function getCoverArt(track)
 end
 
 function getNewTrack()
-    local PlayedTracksDatabase = ac.INIConfig.load(ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/" .. "data.ini")
 
     for attempts = 1,100 do
         local NextTrack1
@@ -948,12 +948,10 @@ function getNewTrack()
 
         local nextTrackTitle, tagsAllowToPlay = readTrackTags(NextTrack1[1])
 
-        if tagsAllowToPlay and ((not EnableSkipRepeatedTracks) or (not NextTrack2) or (NextTrack2 and NextTrack2[1] ~= CurrentlyPlaying and (attempts == 10 or (PlayedTracksDatabase:get("data", nextTrackTitle, 0) <= PlayedTracksDatabase:get("data", NextTrack2[1], 0))))) then
+        if tagsAllowToPlay then
             TrackChoosen = true
             FilePath = NextTrack1[2]
             CurrentlyPlaying = nextTrackTitle
-            PlayedTracksDatabase:set("data", nextTrackTitle, PlayedTracksDatabase:get("data", nextTrackTitle, 0)+1)
-            PlayedTracksDatabase:save()
         end
 
         if TrackChoosen and MusicType == "finish" then
@@ -1136,42 +1134,54 @@ function PlaySelectedTrack(selectedTrack)
 end
 
 function HandleMusicListItem(item)
-    ui.button("▶")
-    if ui.itemHovered() then
-        ui.setTooltip('Play Now')
+    if (not MusicListHideWithCoverArt) or (MusicListHideWithCoverArt and ((not CoverArtCache[item[3]]) or CoverArtCache[item[3]] == ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/" .. "icon.png")) then
+        ui.button("▶")
+        if ui.itemHovered() then
+            ui.setTooltip('Play Now')
+        end
+        if ui.itemClicked(ui.MouseButton.Left, false) then
+            PlaySelectedTrack(item)
+        end
+        ui.sameLine()
+        ui.button("⏫")
+        if ui.itemHovered() then
+            ui.setTooltip('Add To Queue')
+        end
+        if ui.itemClicked(ui.MouseButton.Left, false) then
+            table.insert(MusicQueue, item)
+        end
+        ui.sameLine()
+        if CoverArtCache[item[3]] == nil then
+            getCoverArt(item[3])
+        end
+        if CoverArtCache[item[3]] ~= false then
+            ui.image(CoverArtCache[item[3]], 22)
+        else
+            ui.image(ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/" .. "icon.png", 22)
+        end
+        ui.sameLine()
+        ui.button(item[3])
+        if ui.itemHovered() then
+            ui.setTooltip('Copy Name To Clipboard')
+        end
+        if ui.itemClicked(ui.MouseButton.Left, false) then
+            ac.setClipboadText(item[3])
+        end
+        ui.separator()
     end
-    if ui.itemClicked(ui.MouseButton.Left, false) then
-        PlaySelectedTrack(item)
-    end
-    ui.sameLine()
-    ui.button("⏫")
-    if ui.itemHovered() then
-        ui.setTooltip('Add To Queue')
-    end
-    if ui.itemClicked(ui.MouseButton.Left, false) then
-        table.insert(MusicQueue, item)
-    end
-    ui.sameLine()
-    if CoverArtCache[item[3]] == nil then
-        getCoverArt(item[3])
-    end
-    if CoverArtCache[item[3]] ~= false then
-        ui.image(CoverArtCache[item[3]], 22)
-    else
-        ui.image(ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/" .. "icon.png", 22)
-    end
-    ui.sameLine()
-    ui.button(item[3])
-    if ui.itemHovered() then
-        ui.setTooltip('Copy Name To Clipboard')
-    end
-    if ui.itemClicked(ui.MouseButton.Left, false) then
-        ac.setClipboadText(item[3])
-    end
-    ui.separator()
 end
 
 function MusicListTab()
+    NeedToSaveConfig = false
+    local checkbox
+
+    checkbox = ui.checkbox("Only Show Music Without Cover Art (To make it easier to find which tracks still need one)", MusicListHideWithCoverArt)
+    if checkbox then
+        MusicListHideWithCoverArt = not MusicListHideWithCoverArt
+        ConfigFile:set("settings", "musiclisthidewithcoverart", MusicListHideWithCoverArt)
+        NeedToSaveConfig = true
+    end
+
     ui.tabBar("MusicListItems", {}, MusicListTypes)
 end
 
@@ -1530,17 +1540,6 @@ function BehaviourTab()
             NeedToSaveConfig = true
         end
     end
-
-    if true then
-        ui.separator()
-        checkbox = ui.checkbox("Enable auto-skipping tracks that have been played more often than others.", EnableSkipRepeatedTracks)
-        if checkbox then
-            EnableSkipRepeatedTracks = not EnableSkipRepeatedTracks
-            ConfigFile:set("settings", "skiprepeatedtracks", EnableSkipRepeatedTracks)
-            NeedToSaveConfig = true
-        end
-    end
-
 end
 
 function NowPlayingWidgetTab()

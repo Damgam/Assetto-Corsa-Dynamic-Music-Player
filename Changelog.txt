@@ -1,5 +1,7 @@
 3.3
 - Queue is now ignored when finish music is supposed to play.
+- Added new toggle to Music List, to hide all music that has cover art, to make it easier to find tracks that are still missing it.
+- Removed the option that prevented certain tracks from playing more often than others. I've realised that the data.ini file gets completely messed up with tracks that use [ ] in the filename
 
 3.2
 - Added new CoverArt config which allows you to manually match songs with cover arts. Instructions how to use it are included in the file, works in similar way as ExternalMusicPaths config
