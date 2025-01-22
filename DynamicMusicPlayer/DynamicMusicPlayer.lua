@@ -287,7 +287,7 @@ function updateRaceStatusData()
         TopSpeed = PlayerCarSpeed
     end
 
-    if ((Car.isInPitlane or Car.isInPit) or (Sim.timeToSessionStart > 0)) and EnableIdlePlaylist then
+    if ((Car.isInPitlane or Car.isInPit or Sim.isInMainMenu) or (Sim.timeToSessionStart > 0)) and EnableIdlePlaylist then
         IdleTimer = math.max(11, IdleTimer)
     elseif PlayerCarSpeed <= 1 and EnableIdlePlaylist and EnableIdlePlaylistOutsidePits then
         IdleTimer = IdleTimer + 1
@@ -463,8 +463,8 @@ function updateRaceStatusData()
     if MusicType and ((not DontSkipCurrentTrack) or TrackSwitched or (PlayerFinished and (not PlayedFinishTrack) and FinishMusic[1])) and (
     (MusicType  == "replay" and (not Sim.isReplayActive) and EnableReplayPlaylist) or -- We're not in replay but replay music is playing
     (MusicType  ~= "replay" and Sim.isReplayActive and EnableReplayPlaylist) or -- We're in replay but replay music is not playing
-    (MusicType  == "idle" and PlayerCarSpeed >= 1 and (not (Car.isInPitlane or Car.isInPit))) or -- Idle Music is playing but we're moving
-    (MusicType  ~= "idle" and ((PlayerCarSpeed < 1 and IdleTimer > 10) or Car.isInPitlane or Car.isInPit) and MusicType  ~= "finish" and MusicType  ~= "replay" and EnableIdlePlaylist and IdleMusic[1]) or -- We're Idle but non-idle music is playing, just make sure it's not playing finish music.
+    (MusicType  == "idle" and PlayerCarSpeed >= 1 and (not (Car.isInPitlane or Car.isInPit or Sim.isInMainMenu))) or -- Idle Music is playing but we're moving
+    (MusicType  ~= "idle" and ((PlayerCarSpeed < 1 and IdleTimer > 10) or Car.isInPitlane or Car.isInPit or Sim.isInMainMenu) and MusicType  ~= "finish" and MusicType  ~= "replay" and EnableIdlePlaylist and IdleMusic[1]) or -- We're Idle but non-idle music is playing, just make sure it's not playing finish music.
     (MusicType  == "practice" and Session.type ~= 1) or -- Practice music is playing but we're not in practice
     (MusicType  == "quali" and Session.type ~= 2) or -- Qualification music is playing but we're not in qualis
     (MusicType  == "race" and Session.type ~= 3) or -- Race music is playing but we're not in race
@@ -868,7 +868,7 @@ function getNewTrack()
             end
             MusicType = "finish"
 
-        elseif ((PlayerCarSpeed < 1 and IdleTimer > 10) or Car.isInPitlane or Car.isInPit) and EnableIdlePlaylist and IdleMusic[1] then
+        elseif ((PlayerCarSpeed < 1 and IdleTimer > 10) or Car.isInPitlane or Car.isInPit or Sim.isInMainMenu) and EnableIdlePlaylist and IdleMusic[1] then
 
             IdleMusicCounter = IdleMusicCounter + 1
             if not IdleMusic[IdleMusicCounter] then

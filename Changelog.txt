@@ -1,3 +1,6 @@
+4.0
+- Idle music will now play properly for being in menu while not starting in pits.
+
 3.3
 - Queue is now ignored when finish music is supposed to play.
 - Added new toggle to Music List, to hide all music that has cover art, to make it easier to find tracks that are still missing it.
