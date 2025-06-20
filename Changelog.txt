@@ -1,5 +1,6 @@
 4.0
 - Idle music will now play properly for being in menu while not starting in pits.
+- Added new anti-repetition system.
 
 3.3
 - Queue is now ignored when finish music is supposed to play.

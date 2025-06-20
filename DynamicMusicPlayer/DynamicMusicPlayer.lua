@@ -67,6 +67,7 @@ end
 ------
 
 ConfigFile = ac.INIConfig.load(ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/" .. "settings.ini")
+TrackLastPlayedMemory = ac.INIConfig.load(ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/" .. "tracklastplayedmemory.ini", ac.INIFormat.Extended)
 
 -- Config
 EnableMusic = ConfigFile:get("settings", "appenabled", true)
@@ -617,7 +618,7 @@ local function readTrackTags(filename)
         end
     end
 
-    ac.log("trimmedFilename", "'" .. trimmedFilename .. "'")
+    --ac.log("trimmedFilename", "'" .. trimmedFilename .. "'")
 
     ------------------------------------------------------------------------------------
     -- Allow to play:
@@ -817,9 +818,12 @@ end
 
 function getNewTrack()
 
-    for attempts = 1,100 do
+    for attempts = 1,1000 do
         local NextTrack1
         local NextTrack2
+        local NextTrack3
+        local NextTrack4
+        local NextTrack5
         local TrackChoosen = false
 
         if Sim.isReplayActive and EnableReplayPlaylist then
@@ -832,6 +836,9 @@ function getNewTrack()
 
                 NextTrack1 = ReplayMusic[ReplayMusicCounter]
                 NextTrack2 = ReplayMusic[ReplayMusicCounter+1]
+                NextTrack3 = ReplayMusic[ReplayMusicCounter+2]
+                NextTrack4 = ReplayMusic[ReplayMusicCounter+3]
+                NextTrack5 = ReplayMusic[ReplayMusicCounter+4]
             else
                 OtherMusicCounter = OtherMusicCounter + 1
                 if not OtherMusic[OtherMusicCounter] then
@@ -839,6 +846,9 @@ function getNewTrack()
                 end
                 NextTrack1 = OtherMusic[OtherMusicCounter]
                 NextTrack2 = OtherMusic[OtherMusicCounter+1]
+                NextTrack3 = OtherMusic[OtherMusicCounter+2]
+                NextTrack4 = OtherMusic[OtherMusicCounter+3]
+                NextTrack5 = OtherMusic[OtherMusicCounter+4]
             end
             MusicType = "replay"
 
@@ -851,6 +861,9 @@ function getNewTrack()
                 end
                 NextTrack1 = FinishPodiumMusic[FinishPodiumMusicCounter]
                 NextTrack2 = FinishPodiumMusic[FinishPodiumMusicCounter+1]
+                NextTrack3 = FinishPodiumMusic[FinishPodiumMusicCounter+2]
+                NextTrack4 = FinishPodiumMusic[FinishPodiumMusicCounter+3]
+                NextTrack5 = FinishPodiumMusic[FinishPodiumMusicCounter+4]
             elseif FinishMusic[1] then
                 FinishMusicCounter = FinishMusicCounter + 1
                 if not FinishMusic[FinishMusicCounter] then
@@ -858,6 +871,9 @@ function getNewTrack()
                 end
                 NextTrack1 = FinishMusic[FinishMusicCounter]
                 NextTrack2 = FinishMusic[FinishMusicCounter+1]
+                NextTrack3 = FinishMusic[FinishMusicCounter+2]
+                NextTrack4 = FinishMusic[FinishMusicCounter+3]
+                NextTrack5 = FinishMusic[FinishMusicCounter+4]
             else
                 OtherMusicCounter = OtherMusicCounter + 1
                 if not OtherMusic[OtherMusicCounter] then
@@ -865,6 +881,9 @@ function getNewTrack()
                 end
                 NextTrack1 = OtherMusic[OtherMusicCounter]
                 NextTrack2 = OtherMusic[OtherMusicCounter+1]
+                NextTrack3 = OtherMusic[OtherMusicCounter+2]
+                NextTrack4 = OtherMusic[OtherMusicCounter+3]
+                NextTrack5 = OtherMusic[OtherMusicCounter+4]
             end
             MusicType = "finish"
 
@@ -876,6 +895,9 @@ function getNewTrack()
             end
             NextTrack1 = IdleMusic[IdleMusicCounter]
             NextTrack2 = IdleMusic[IdleMusicCounter+1]
+            NextTrack3 = IdleMusic[IdleMusicCounter+2]
+            NextTrack4 = IdleMusic[IdleMusicCounter+3]
+            NextTrack5 = IdleMusic[IdleMusicCounter+4]
             MusicType = "idle"
 
         elseif (EnablePracticePlaylist and Session.type == 1) then
@@ -886,6 +908,9 @@ function getNewTrack()
                 end
                 NextTrack1 = PracticeMusic[PracticeMusicCounter]
                 NextTrack2 = PracticeMusic[PracticeMusicCounter+1]
+                NextTrack3 = PracticeMusic[PracticeMusicCounter+2]
+                NextTrack4 = PracticeMusic[PracticeMusicCounter+3]
+                NextTrack5 = PracticeMusic[PracticeMusicCounter+4]
             else
                 OtherMusicCounter = OtherMusicCounter + 1
                 if not OtherMusic[OtherMusicCounter] then
@@ -893,6 +918,9 @@ function getNewTrack()
                 end
                 NextTrack1 = OtherMusic[OtherMusicCounter]
                 NextTrack2 = OtherMusic[OtherMusicCounter+1]
+                NextTrack3 = OtherMusic[OtherMusicCounter+2]
+                NextTrack4 = OtherMusic[OtherMusicCounter+3]
+                NextTrack5 = OtherMusic[OtherMusicCounter+4]
             end
             MusicType = "practice"
 
@@ -905,6 +933,9 @@ function getNewTrack()
                 end
                 NextTrack1 = QualificationMusic[QualificationMusicCounter]
                 NextTrack2 = QualificationMusic[QualificationMusicCounter+1]
+                NextTrack3 = QualificationMusic[QualificationMusicCounter+2]
+                NextTrack4 = QualificationMusic[QualificationMusicCounter+3]
+                NextTrack5 = QualificationMusic[QualificationMusicCounter+4]
             else
                 OtherMusicCounter = OtherMusicCounter + 1
                 if not OtherMusic[OtherMusicCounter] then
@@ -912,6 +943,9 @@ function getNewTrack()
                 end
                 NextTrack1 = OtherMusic[OtherMusicCounter]
                 NextTrack2 = OtherMusic[OtherMusicCounter+1]
+                NextTrack3 = OtherMusic[OtherMusicCounter+2]
+                NextTrack4 = OtherMusic[OtherMusicCounter+3]
+                NextTrack5 = OtherMusic[OtherMusicCounter+4]
             end
             MusicType = "quali"
 
@@ -924,6 +958,9 @@ function getNewTrack()
                 end
                 NextTrack1 = RaceMusic[RaceMusicCounter]
                 NextTrack2 = RaceMusic[RaceMusicCounter+1]
+                NextTrack3 = RaceMusic[RaceMusicCounter+2]
+                NextTrack4 = RaceMusic[RaceMusicCounter+3]
+                NextTrack5 = RaceMusic[RaceMusicCounter+4]
             else
                 OtherMusicCounter = OtherMusicCounter + 1
                 if not OtherMusic[OtherMusicCounter] then
@@ -931,6 +968,9 @@ function getNewTrack()
                 end
                 NextTrack1 = OtherMusic[OtherMusicCounter]
                 NextTrack2 = OtherMusic[OtherMusicCounter+1]
+                NextTrack3 = OtherMusic[OtherMusicCounter+2]
+                NextTrack4 = OtherMusic[OtherMusicCounter+3]
+                NextTrack5 = OtherMusic[OtherMusicCounter+4]
             end
             MusicType = "race"
 
@@ -942,11 +982,56 @@ function getNewTrack()
             end
             NextTrack1 = OtherMusic[OtherMusicCounter]
             NextTrack2 = OtherMusic[OtherMusicCounter+1]
+            NextTrack3 = OtherMusic[OtherMusicCounter+2]
+            NextTrack4 = OtherMusic[OtherMusicCounter+3]
+            NextTrack5 = OtherMusic[OtherMusicCounter+4]
             MusicType = "other"
             
         end
 
         local nextTrackTitle, tagsAllowToPlay = readTrackTags(NextTrack1[1])
+        if tagsAllowToPlay then
+            
+            local track1LastPlayedTime = 9999999999
+            local track2LastPlayedTime = 9999999999
+            local track3LastPlayedTime = 9999999999
+            local track4LastPlayedTime = 9999999999
+            local track5LastPlayedTime = 9999999999
+            local track2TagsAllowToPlay = false
+            local track3TagsAllowToPlay = false
+            local track4TagsAllowToPlay = false
+            local track5TagsAllowToPlay = false
+
+            if NextTrack1 then
+                track1LastPlayedTime = TrackLastPlayedMemory:get("lastplayedtimes", readTrackTags(NextTrack1[1]), 0)
+            end
+            if NextTrack2 then
+                track2LastPlayedTime = TrackLastPlayedMemory:get("lastplayedtimes", readTrackTags(NextTrack2[1]), 0)
+                _, track2TagsAllowToPlay = readTrackTags(NextTrack2[1])
+            end
+            if NextTrack3 then
+                track3LastPlayedTime = TrackLastPlayedMemory:get("lastplayedtimes", readTrackTags(NextTrack3[1]), 0)
+                _, track3TagsAllowToPlay = readTrackTags(NextTrack3[1])
+            end
+            if NextTrack4 then
+                track4LastPlayedTime = TrackLastPlayedMemory:get("lastplayedtimes", readTrackTags(NextTrack4[1]), 0)
+                _, track4TagsAllowToPlay = readTrackTags(NextTrack4[1])
+            end
+            if NextTrack5 then
+                track5LastPlayedTime = TrackLastPlayedMemory:get("lastplayedtimes", readTrackTags(NextTrack5[1]), 0)
+                _, track5TagsAllowToPlay = readTrackTags(NextTrack5[1])
+            end
+
+            if tagsAllowToPlay and
+            (track1LastPlayedTime <= track2LastPlayedTime or track2TagsAllowToPlay == false) and
+            (track1LastPlayedTime <= track3LastPlayedTime or track3TagsAllowToPlay == false) and
+            (track1LastPlayedTime <= track4LastPlayedTime or track4TagsAllowToPlay == false) and
+            (track1LastPlayedTime <= track5LastPlayedTime or track5TagsAllowToPlay == false) then
+                tagsAllowToPlay = true
+            else
+                tagsAllowToPlay = false
+            end
+        end
 
         if tagsAllowToPlay then
             TrackChoosen = true
@@ -961,6 +1046,8 @@ function getNewTrack()
         if TrackChoosen then
             --ac.log(FilePath)
             nowplayingiconcoverart = getCoverArt(CurrentlyPlaying)
+            TrackLastPlayedMemory:set("lastplayedtimes", readTrackTags(NextTrack1[1]), os.time())
+            TrackLastPlayedMemory:save()
             break
         end
     end
