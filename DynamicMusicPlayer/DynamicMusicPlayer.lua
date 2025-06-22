@@ -68,6 +68,8 @@ end
 
 ConfigFile = ac.INIConfig.load(ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/" .. "settings.ini")
 TrackLastPlayedMemory = ac.INIConfig.load(ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/" .. "tracklastplayedmemory.ini", ac.INIFormat.Extended)
+TracksMemory = {}
+TracksMemory = stringify.parse(TrackLastPlayedMemory:get("lastplayedtimes", "table", "{}"))
 
 -- Config
 EnableMusic = ConfigFile:get("settings", "appenabled", true)
@@ -817,7 +819,7 @@ function getCoverArt(track)
 end
 
 function getNewTrack()
-
+    ac.log(TracksMemory)
     for attempts = 1,1000 do
         local NextTrack1
         local NextTrack2
@@ -1002,23 +1004,33 @@ function getNewTrack()
             local track4TagsAllowToPlay = false
             local track5TagsAllowToPlay = false
 
+            if not TracksMemory then
+                TracksMemory = {}
+                TracksMemory = stringify.parse(TrackLastPlayedMemory:get("lastplayedtimes", "table", "{}"))
+            end
+            
             if NextTrack1 then
-                track1LastPlayedTime = TrackLastPlayedMemory:get("lastplayedtimes", readTrackTags(NextTrack1[1]), 0)
+                track1LastPlayedTime = TracksMemory[readTrackTags(NextTrack1[1])] or 0
+                --ac.log(readTrackTags(NextTrack1[1]), track1LastPlayedTime)
             end
             if NextTrack2 then
-                track2LastPlayedTime = TrackLastPlayedMemory:get("lastplayedtimes", readTrackTags(NextTrack2[1]), 0)
+                track2LastPlayedTime = TracksMemory[readTrackTags(NextTrack2[1])] or 0
+                --ac.log(readTrackTags(NextTrack2[1]), track2LastPlayedTime)
                 _, track2TagsAllowToPlay = readTrackTags(NextTrack2[1])
             end
             if NextTrack3 then
-                track3LastPlayedTime = TrackLastPlayedMemory:get("lastplayedtimes", readTrackTags(NextTrack3[1]), 0)
+                track3LastPlayedTime = TracksMemory[readTrackTags(NextTrack3[1])] or 0
+                --ac.log(readTrackTags(NextTrack3[1]), track3LastPlayedTime)
                 _, track3TagsAllowToPlay = readTrackTags(NextTrack3[1])
             end
             if NextTrack4 then
-                track4LastPlayedTime = TrackLastPlayedMemory:get("lastplayedtimes", readTrackTags(NextTrack4[1]), 0)
+                track4LastPlayedTime = TracksMemory[readTrackTags(NextTrack4[1])] or 0
+                --ac.log(readTrackTags(NextTrack4[1]), track4LastPlayedTime)
                 _, track4TagsAllowToPlay = readTrackTags(NextTrack4[1])
             end
             if NextTrack5 then
-                track5LastPlayedTime = TrackLastPlayedMemory:get("lastplayedtimes", readTrackTags(NextTrack5[1]), 0)
+                track5LastPlayedTime = TracksMemory[readTrackTags(NextTrack5[1])] or 0
+                --ac.log(readTrackTags(NextTrack5[1]), track5LastPlayedTime)
                 _, track5TagsAllowToPlay = readTrackTags(NextTrack5[1])
             end
 
@@ -1046,7 +1058,9 @@ function getNewTrack()
         if TrackChoosen then
             --ac.log(FilePath)
             nowplayingiconcoverart = getCoverArt(CurrentlyPlaying)
-            TrackLastPlayedMemory:set("lastplayedtimes", readTrackTags(NextTrack1[1]), os.time())
+            TracksMemory[readTrackTags(NextTrack1[1])] = os.time()
+            local stringifiedTracksMemory = stringify(TracksMemory, true, 1000000)
+            TrackLastPlayedMemory:set("lastplayedtimes", "table", stringifiedTracksMemory)
             TrackLastPlayedMemory:save()
             break
         end
