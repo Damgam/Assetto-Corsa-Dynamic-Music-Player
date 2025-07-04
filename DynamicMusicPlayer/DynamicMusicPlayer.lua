@@ -819,7 +819,7 @@ function getCoverArt(track)
 end
 
 function getNewTrack()
-    ac.log(TracksMemory)
+    --ac.log(TracksMemory)
     for attempts = 1,1000 do
         local NextTrack1
         local NextTrack2
@@ -1008,7 +1008,7 @@ function getNewTrack()
                 TracksMemory = {}
                 TracksMemory = stringify.parse(TrackLastPlayedMemory:get("lastplayedtimes", "table", "{}"))
             end
-            
+
             if NextTrack1 then
                 track1LastPlayedTime = TracksMemory[readTrackTags(NextTrack1[1])] or 0
                 --ac.log(readTrackTags(NextTrack1[1]), track1LastPlayedTime)
@@ -1034,7 +1034,15 @@ function getNewTrack()
                 _, track5TagsAllowToPlay = readTrackTags(NextTrack5[1])
             end
 
-            if tagsAllowToPlay and
+            local day = 86400
+            if tagsAllowToPlay and 
+            ((track1LastPlayedTime < os.time()-(day*1) and math.random() <= 0.05) or
+            (track1LastPlayedTime < os.time()-(day*7) and math.random() <= 0.2) or
+            (track1LastPlayedTime < os.time()-(day*14) and math.random() <= 0.4) or
+            (track1LastPlayedTime < os.time()-(day*21) and math.random() <= 0.6) or
+            (track1LastPlayedTime < os.time()-(day*28))) then
+                tagsAllowToPlay = true
+            elseif tagsAllowToPlay and
             (track1LastPlayedTime <= track2LastPlayedTime or track2TagsAllowToPlay == false) and
             (track1LastPlayedTime <= track3LastPlayedTime or track3TagsAllowToPlay == false) and
             (track1LastPlayedTime <= track4LastPlayedTime or track4TagsAllowToPlay == false) and
@@ -1072,7 +1080,6 @@ end
 UpdateCounter = 0
 SkipAttempts = 0
 function script.update(dt)
-
     local gameDt = ac.getGameDeltaT()
     UpdateCounter = UpdateCounter+1
 
