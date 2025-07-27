@@ -2,6 +2,16 @@
 CSPBuild = ac.getPatchVersionCode()
 math.randomseed(os.preciseClock())
 
+CoverArtExportCanvas = ui.ExtraCanvas(vec2(256, 256), 1, render.AntialiasingMode.ExtraSharpCMAA)
+function RenderCoverArtExportCanvas()
+    CoverArtExportCanvas:clear()
+    if nowplayingiconcoverart and nowplayingiconcoverart ~= ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/" .. "icon.png" then
+        ui.drawImage(nowplayingiconcoverart, vec2(0, 0), vec2(256, 256), rgb(1,1,1))
+    else
+        ui.drawImage(ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/OBS Stuff/BlankCoverArt.png", vec2(0, 0), vec2(256, 256), rgb(1,1,1))
+    end
+end
+
 function table.shuffle(sequence, firstIndex) -- because i'm not sure if it exists.
     firstIndex = firstIndex or 1
     for i = firstIndex, #sequence - 2 + firstIndex do
@@ -22,6 +32,13 @@ function table_copy(tbl)
 		copy[key] = value
 	end
 	return copy
+end
+
+function getInitialBase64Symbols(string, length)
+    local cutString = ""
+    cutString = ac.encodeBase64(string, true)
+    cutString = string.sub(cutString, 1, 2)
+    return cutString
 end
 
 
@@ -511,6 +528,13 @@ function updateRaceStatusData()
         end
     end
 
+    if CurrentTrack then
+        local nowplayingOBStext = "Now Playing: " .. "(" .. string_formatTime(math.ceil(CurrentTrack:currentTime())) .. "/" .. string_formatTime(math.ceil(CurrentTrack:duration())) .. ") "
+        io.save(ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/OBS Stuff/nowplayingtime.txt", nowplayingOBStext, false)
+    else
+        local nowplayingOBStext = ""
+        io.save(ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/OBS Stuff/nowplayingtime.txt", nowplayingOBStext, false)
+    end
 end
 updateRaceStatusData()
 
@@ -1035,11 +1059,11 @@ function getNewTrack()
             end
 
             local day = 86400
-            if tagsAllowToPlay and 
-            ((track1LastPlayedTime < os.time()-(day*1) and math.random() <= 0.05) or
-            (track1LastPlayedTime < os.time()-(day*7) and math.random() <= 0.2) or
-            (track1LastPlayedTime < os.time()-(day*14) and math.random() <= 0.4) or
-            (track1LastPlayedTime < os.time()-(day*21) and math.random() <= 0.6) or
+            local daychance = math.random()
+            if tagsAllowToPlay and
+            ((track1LastPlayedTime < os.time()-(day*7) and daychance <= 0.1) or
+            (track1LastPlayedTime < os.time()-(day*14) and daychance <= 0.2) or
+            (track1LastPlayedTime < os.time()-(day*21) and daychance <= 0.4) or
             (track1LastPlayedTime < os.time()-(day*28))) then
                 tagsAllowToPlay = true
             elseif tagsAllowToPlay and
@@ -1070,6 +1094,11 @@ function getNewTrack()
             local stringifiedTracksMemory = stringify(TracksMemory, true, 1000000)
             TrackLastPlayedMemory:set("lastplayedtimes", "table", stringifiedTracksMemory)
             TrackLastPlayedMemory:save()
+
+            io.save(ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/OBS Stuff/tracktitle.txt", CurrentlyPlaying, false)
+            CoverArtExportCanvas:update(RenderCoverArtExportCanvas)
+            CoverArtExportCanvas:save(ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/OBS Stuff/CoverArt.png")
+
             break
         end
     end
@@ -1239,6 +1268,9 @@ function PlaySelectedTrack(selectedTrack)
     DontSkipCurrentTrack = true
     NowPlayingOpacityCurrent = 0
     nowplayingiconcoverart = getCoverArt(CurrentlyPlaying)
+    io.save(ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/OBS Stuff/tracktitle.txt", CurrentlyPlaying, false)
+    CoverArtExportCanvas:update(RenderCoverArtExportCanvas)
+    CoverArtExportCanvas:save(ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/OBS Stuff/CoverArt.png")
 end
 
 function HandleMusicListItem(item)
@@ -1897,3 +1929,12 @@ DecreaseVolumeButton:onPressed(DecreaseVolumeFunction)
 
 SkipTrackButton = ac.ControlButton('app.DynamicMusicPlayer/Skip Track Button')
 SkipTrackButton:onPressed(SkipTrackFunction)
+
+
+local function ACIsShuttingDown()
+    io.save(ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/OBS Stuff/tracktitle.txt", "", false)
+    io.save(ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/OBS Stuff/nowplayingtime.txt", "", false)
+    io.copyFile(ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/OBS Stuff/BlankCoverArt.png", ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/OBS Stuff/CoverArt.png", false)
+end
+
+ac.onRelease(ACIsShuttingDown)
