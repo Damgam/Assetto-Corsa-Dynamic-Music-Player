@@ -883,7 +883,7 @@ function getNewTrack()
                 end
                 for i = 1,math.ceil(math.max(5, #OtherMusic * 0.1)) do
                     if OtherMusic[OtherMusicCounter+i-1] then
-                        NextTracksTable[i] = OtherMusic[ReplayMusicCounter+i-1]
+                        NextTracksTable[i] = OtherMusic[OtherMusicCounter+i-1]
                     end
                 end
             end
@@ -918,7 +918,7 @@ function getNewTrack()
                 end
                 for i = 1,math.ceil(math.max(5, #OtherMusic * 0.1)) do
                     if OtherMusic[OtherMusicCounter+i-1] then
-                        NextTracksTable[i] = OtherMusic[ReplayMusicCounter+i-1]
+                        NextTracksTable[i] = OtherMusic[OtherMusicCounter+i-1]
                     end
                 end
             end
@@ -955,7 +955,7 @@ function getNewTrack()
                 end
                 for i = 1,math.ceil(math.max(5, #OtherMusic * 0.1)) do
                     if OtherMusic[OtherMusicCounter+i-1] then
-                        NextTracksTable[i] = OtherMusic[ReplayMusicCounter+i-1]
+                        NextTracksTable[i] = OtherMusic[OtherMusicCounter+i-1]
                     end
                 end
             end
@@ -980,7 +980,7 @@ function getNewTrack()
                 end
                 for i = 1,math.ceil(math.max(5, #OtherMusic * 0.1)) do
                     if OtherMusic[OtherMusicCounter+i-1] then
-                        NextTracksTable[i] = OtherMusic[ReplayMusicCounter+i-1]
+                        NextTracksTable[i] = OtherMusic[OtherMusicCounter+i-1]
                     end
                 end
             end
@@ -1005,7 +1005,7 @@ function getNewTrack()
                 end
                 for i = 1,math.ceil(math.max(5, #OtherMusic * 0.1)) do
                     if OtherMusic[OtherMusicCounter+i-1] then
-                        NextTracksTable[i] = OtherMusic[ReplayMusicCounter+i-1]
+                        NextTracksTable[i] = OtherMusic[OtherMusicCounter+i-1]
                     end
                 end
             end
@@ -1019,7 +1019,7 @@ function getNewTrack()
             end
             for i = 1,math.ceil(math.max(5, #OtherMusic * 0.1)) do
                 if OtherMusic[OtherMusicCounter+i-1] then
-                    NextTracksTable[i] = OtherMusic[ReplayMusicCounter+i-1]
+                    NextTracksTable[i] = OtherMusic[OtherMusicCounter+i-1]
                 end
             end
             MusicType = "other"
