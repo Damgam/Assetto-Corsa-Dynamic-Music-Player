@@ -35,9 +35,10 @@ function table_copy(tbl)
 end
 
 function getInitialBase64Symbols(string, length)
+    if not length then length = 64 end
     local cutString = ""
     cutString = ac.encodeBase64(string, true)
-    cutString = string.sub(cutString, 1, 2)
+    cutString = string.sub(cutString, 1, length)
     return cutString
 end
 
@@ -84,9 +85,24 @@ end
 ------
 
 ConfigFile = ac.INIConfig.load(ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/" .. "settings.ini")
-TrackLastPlayedMemory = ac.INIConfig.load(ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/" .. "tracklastplayedmemory.ini", ac.INIFormat.Extended)
 TracksMemory = {}
-TracksMemory = stringify.parse(TrackLastPlayedMemory:get("lastplayedtimes", "table", "{}"))
+
+--for trackTitle, lastPlayedTime in pairs(TracksMemory) do
+--    --local base64code = getInitialBase64Symbols(trackTitle, 10)
+--    local trackMemoryFile = ac.INIConfig.load(ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/TracksPlayedMemory/" .. trackTitle ..".ini", ac.INIFormat.Extended)
+--    local trackMemoryTable = trackMemoryFile:get("lastplayedtimes", "time", 0)
+--    trackMemoryFile:set("lastplayedtimes", "time", lastPlayedTime)
+--    trackMemoryFile:save()
+--end
+
+io.createDir(__dirname .. '/TracksPlayedMemory')
+local TracksMemoryFolder = table.map(io.scanDir( __dirname .. '/TracksPlayedMemory', '*'), function (x) return { string.sub(x, 1, #x - 4), '/TracksPlayedMemory' .. '/' .. x } end)
+for i = 1,#TracksMemoryFolder do
+    local trackTitle = TracksMemoryFolder[i][1]
+    TracksMemory[trackTitle] = ac.INIConfig.load(ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/TracksPlayedMemory/" .. trackTitle .. ".ini", ac.INIFormat.Extended):get("lastplayedtimes", "time", 0)
+end
+
+
 
 -- Config
 EnableMusic = ConfigFile:get("settings", "appenabled", true)
@@ -844,12 +860,8 @@ end
 
 function getNewTrack()
     --ac.log(TracksMemory)
-    for attempts = 1,1000 do
-        local NextTrack1
-        local NextTrack2
-        local NextTrack3
-        local NextTrack4
-        local NextTrack5
+    for attempts = 1,10000 do
+        local NextTracksTable = {}
         local TrackChoosen = false
 
         if Sim.isReplayActive and EnableReplayPlaylist then
@@ -859,22 +871,21 @@ function getNewTrack()
                 if not ReplayMusic[ReplayMusicCounter] then
                     ReplayMusicCounter = 1
                 end
-
-                NextTrack1 = ReplayMusic[ReplayMusicCounter]
-                NextTrack2 = ReplayMusic[ReplayMusicCounter+1]
-                NextTrack3 = ReplayMusic[ReplayMusicCounter+2]
-                NextTrack4 = ReplayMusic[ReplayMusicCounter+3]
-                NextTrack5 = ReplayMusic[ReplayMusicCounter+4]
+                for i = 1,math.ceil(math.max(5, #ReplayMusic * 0.1)) do
+                    if ReplayMusic[ReplayMusicCounter+i-1] then
+                        NextTracksTable[i] = ReplayMusic[ReplayMusicCounter+i-1]
+                    end
+                end
             else
                 OtherMusicCounter = OtherMusicCounter + 1
                 if not OtherMusic[OtherMusicCounter] then
                     OtherMusicCounter = 1
                 end
-                NextTrack1 = OtherMusic[OtherMusicCounter]
-                NextTrack2 = OtherMusic[OtherMusicCounter+1]
-                NextTrack3 = OtherMusic[OtherMusicCounter+2]
-                NextTrack4 = OtherMusic[OtherMusicCounter+3]
-                NextTrack5 = OtherMusic[OtherMusicCounter+4]
+                for i = 1,math.ceil(math.max(5, #OtherMusic * 0.1)) do
+                    if OtherMusic[OtherMusicCounter+i-1] then
+                        NextTracksTable[i] = OtherMusic[ReplayMusicCounter+i-1]
+                    end
+                end
             end
             MusicType = "replay"
 
@@ -885,31 +896,31 @@ function getNewTrack()
                 if not FinishPodiumMusic[FinishPodiumMusicCounter] then
                     FinishPodiumMusicCounter = 1
                 end
-                NextTrack1 = FinishPodiumMusic[FinishPodiumMusicCounter]
-                NextTrack2 = FinishPodiumMusic[FinishPodiumMusicCounter+1]
-                NextTrack3 = FinishPodiumMusic[FinishPodiumMusicCounter+2]
-                NextTrack4 = FinishPodiumMusic[FinishPodiumMusicCounter+3]
-                NextTrack5 = FinishPodiumMusic[FinishPodiumMusicCounter+4]
+                for i = 1,math.ceil(math.max(5, #FinishPodiumMusic * 0.1)) do
+                    if FinishPodiumMusic[FinishPodiumMusicCounter+i-1] then
+                        NextTracksTable[i] = FinishPodiumMusic[FinishPodiumMusicCounter+i-1]
+                    end
+                end
             elseif FinishMusic[1] then
                 FinishMusicCounter = FinishMusicCounter + 1
                 if not FinishMusic[FinishMusicCounter] then
                     FinishMusicCounter = 1
                 end
-                NextTrack1 = FinishMusic[FinishMusicCounter]
-                NextTrack2 = FinishMusic[FinishMusicCounter+1]
-                NextTrack3 = FinishMusic[FinishMusicCounter+2]
-                NextTrack4 = FinishMusic[FinishMusicCounter+3]
-                NextTrack5 = FinishMusic[FinishMusicCounter+4]
+                for i = 1,math.ceil(math.max(5, #FinishMusic * 0.1)) do
+                    if FinishMusic[FinishMusicCounter+i-1] then
+                        NextTracksTable[i] = FinishMusic[FinishMusicCounter+i-1]
+                    end
+                end
             else
                 OtherMusicCounter = OtherMusicCounter + 1
                 if not OtherMusic[OtherMusicCounter] then
                     OtherMusicCounter = 1
                 end
-                NextTrack1 = OtherMusic[OtherMusicCounter]
-                NextTrack2 = OtherMusic[OtherMusicCounter+1]
-                NextTrack3 = OtherMusic[OtherMusicCounter+2]
-                NextTrack4 = OtherMusic[OtherMusicCounter+3]
-                NextTrack5 = OtherMusic[OtherMusicCounter+4]
+                for i = 1,math.ceil(math.max(5, #OtherMusic * 0.1)) do
+                    if OtherMusic[OtherMusicCounter+i-1] then
+                        NextTracksTable[i] = OtherMusic[ReplayMusicCounter+i-1]
+                    end
+                end
             end
             MusicType = "finish"
 
@@ -919,11 +930,11 @@ function getNewTrack()
             if not IdleMusic[IdleMusicCounter] then
                 IdleMusicCounter = 1
             end
-            NextTrack1 = IdleMusic[IdleMusicCounter]
-            NextTrack2 = IdleMusic[IdleMusicCounter+1]
-            NextTrack3 = IdleMusic[IdleMusicCounter+2]
-            NextTrack4 = IdleMusic[IdleMusicCounter+3]
-            NextTrack5 = IdleMusic[IdleMusicCounter+4]
+            for i = 1,math.ceil(math.max(5, #IdleMusic * 0.1)) do
+                if IdleMusic[IdleMusicCounter+i-1] then
+                    NextTracksTable[i] = IdleMusic[IdleMusicCounter+i-1]
+                end
+            end
             MusicType = "idle"
 
         elseif (EnablePracticePlaylist and Session.type == 1) then
@@ -932,21 +943,21 @@ function getNewTrack()
                 if not PracticeMusic[PracticeMusicCounter] then
                     PracticeMusicCounter = 1
                 end
-                NextTrack1 = PracticeMusic[PracticeMusicCounter]
-                NextTrack2 = PracticeMusic[PracticeMusicCounter+1]
-                NextTrack3 = PracticeMusic[PracticeMusicCounter+2]
-                NextTrack4 = PracticeMusic[PracticeMusicCounter+3]
-                NextTrack5 = PracticeMusic[PracticeMusicCounter+4]
+                for i = 1,math.ceil(math.max(5, #PracticeMusic * 0.1)) do
+                    if PracticeMusic[PracticeMusicCounter+i-1] then
+                        NextTracksTable[i] = PracticeMusic[PracticeMusicCounter+i-1]
+                    end
+                end
             else
                 OtherMusicCounter = OtherMusicCounter + 1
                 if not OtherMusic[OtherMusicCounter] then
                     OtherMusicCounter = 1
                 end
-                NextTrack1 = OtherMusic[OtherMusicCounter]
-                NextTrack2 = OtherMusic[OtherMusicCounter+1]
-                NextTrack3 = OtherMusic[OtherMusicCounter+2]
-                NextTrack4 = OtherMusic[OtherMusicCounter+3]
-                NextTrack5 = OtherMusic[OtherMusicCounter+4]
+                for i = 1,math.ceil(math.max(5, #OtherMusic * 0.1)) do
+                    if OtherMusic[OtherMusicCounter+i-1] then
+                        NextTracksTable[i] = OtherMusic[ReplayMusicCounter+i-1]
+                    end
+                end
             end
             MusicType = "practice"
 
@@ -957,21 +968,21 @@ function getNewTrack()
                 if not QualificationMusic[QualificationMusicCounter] then
                     QualificationMusicCounter = 1
                 end
-                NextTrack1 = QualificationMusic[QualificationMusicCounter]
-                NextTrack2 = QualificationMusic[QualificationMusicCounter+1]
-                NextTrack3 = QualificationMusic[QualificationMusicCounter+2]
-                NextTrack4 = QualificationMusic[QualificationMusicCounter+3]
-                NextTrack5 = QualificationMusic[QualificationMusicCounter+4]
+                for i = 1,math.ceil(math.max(5, #QualificationMusic * 0.1)) do
+                    if QualificationMusic[QualificationMusicCounter+i-1] then
+                        NextTracksTable[i] = QualificationMusic[QualificationMusicCounter+i-1]
+                    end
+                end
             else
                 OtherMusicCounter = OtherMusicCounter + 1
                 if not OtherMusic[OtherMusicCounter] then
                     OtherMusicCounter = 1
                 end
-                NextTrack1 = OtherMusic[OtherMusicCounter]
-                NextTrack2 = OtherMusic[OtherMusicCounter+1]
-                NextTrack3 = OtherMusic[OtherMusicCounter+2]
-                NextTrack4 = OtherMusic[OtherMusicCounter+3]
-                NextTrack5 = OtherMusic[OtherMusicCounter+4]
+                for i = 1,math.ceil(math.max(5, #OtherMusic * 0.1)) do
+                    if OtherMusic[OtherMusicCounter+i-1] then
+                        NextTracksTable[i] = OtherMusic[ReplayMusicCounter+i-1]
+                    end
+                end
             end
             MusicType = "quali"
 
@@ -982,21 +993,21 @@ function getNewTrack()
                 if not RaceMusic[RaceMusicCounter] then
                     RaceMusicCounter = 1
                 end
-                NextTrack1 = RaceMusic[RaceMusicCounter]
-                NextTrack2 = RaceMusic[RaceMusicCounter+1]
-                NextTrack3 = RaceMusic[RaceMusicCounter+2]
-                NextTrack4 = RaceMusic[RaceMusicCounter+3]
-                NextTrack5 = RaceMusic[RaceMusicCounter+4]
+                for i = 1,math.ceil(math.max(5, #RaceMusic * 0.1)) do
+                    if RaceMusic[RaceMusicCounter+i-1] then
+                        NextTracksTable[i] = RaceMusic[RaceMusicCounter+i-1]
+                    end
+                end
             else
                 OtherMusicCounter = OtherMusicCounter + 1
                 if not OtherMusic[OtherMusicCounter] then
                     OtherMusicCounter = 1
                 end
-                NextTrack1 = OtherMusic[OtherMusicCounter]
-                NextTrack2 = OtherMusic[OtherMusicCounter+1]
-                NextTrack3 = OtherMusic[OtherMusicCounter+2]
-                NextTrack4 = OtherMusic[OtherMusicCounter+3]
-                NextTrack5 = OtherMusic[OtherMusicCounter+4]
+                for i = 1,math.ceil(math.max(5, #OtherMusic * 0.1)) do
+                    if OtherMusic[OtherMusicCounter+i-1] then
+                        NextTracksTable[i] = OtherMusic[ReplayMusicCounter+i-1]
+                    end
+                end
             end
             MusicType = "race"
 
@@ -1006,80 +1017,73 @@ function getNewTrack()
             if not OtherMusic[OtherMusicCounter] then
                 OtherMusicCounter = 1
             end
-            NextTrack1 = OtherMusic[OtherMusicCounter]
-            NextTrack2 = OtherMusic[OtherMusicCounter+1]
-            NextTrack3 = OtherMusic[OtherMusicCounter+2]
-            NextTrack4 = OtherMusic[OtherMusicCounter+3]
-            NextTrack5 = OtherMusic[OtherMusicCounter+4]
+            for i = 1,math.ceil(math.max(5, #OtherMusic * 0.1)) do
+                if OtherMusic[OtherMusicCounter+i-1] then
+                    NextTracksTable[i] = OtherMusic[ReplayMusicCounter+i-1]
+                end
+            end
             MusicType = "other"
             
         end
 
-        local nextTrackTitle, tagsAllowToPlay = readTrackTags(NextTrack1[1])
-        if tagsAllowToPlay then
-            
-            local track1LastPlayedTime = 9999999999
-            local track2LastPlayedTime = 9999999999
-            local track3LastPlayedTime = 9999999999
-            local track4LastPlayedTime = 9999999999
-            local track5LastPlayedTime = 9999999999
-            local track2TagsAllowToPlay = false
-            local track3TagsAllowToPlay = false
-            local track4TagsAllowToPlay = false
-            local track5TagsAllowToPlay = false
-
-            if not TracksMemory then
-                TracksMemory = {}
-                TracksMemory = stringify.parse(TrackLastPlayedMemory:get("lastplayedtimes", "table", "{}"))
-            end
-
-            if NextTrack1 then
-                track1LastPlayedTime = TracksMemory[readTrackTags(NextTrack1[1])] or 0
-                --ac.log(readTrackTags(NextTrack1[1]), track1LastPlayedTime)
-            end
-            if NextTrack2 then
-                track2LastPlayedTime = TracksMemory[readTrackTags(NextTrack2[1])] or 0
-                --ac.log(readTrackTags(NextTrack2[1]), track2LastPlayedTime)
-                _, track2TagsAllowToPlay = readTrackTags(NextTrack2[1])
-            end
-            if NextTrack3 then
-                track3LastPlayedTime = TracksMemory[readTrackTags(NextTrack3[1])] or 0
-                --ac.log(readTrackTags(NextTrack3[1]), track3LastPlayedTime)
-                _, track3TagsAllowToPlay = readTrackTags(NextTrack3[1])
-            end
-            if NextTrack4 then
-                track4LastPlayedTime = TracksMemory[readTrackTags(NextTrack4[1])] or 0
-                --ac.log(readTrackTags(NextTrack4[1]), track4LastPlayedTime)
-                _, track4TagsAllowToPlay = readTrackTags(NextTrack4[1])
-            end
-            if NextTrack5 then
-                track5LastPlayedTime = TracksMemory[readTrackTags(NextTrack5[1])] or 0
-                --ac.log(readTrackTags(NextTrack5[1]), track5LastPlayedTime)
-                _, track5TagsAllowToPlay = readTrackTags(NextTrack5[1])
+        local tracksLastPlayedTime = {}
+        local tracksTagsAllowToPlay = {}
+        local nextTrackTitle, _  = readTrackTags(NextTracksTable[1][1])
+        _, tracksTagsAllowToPlay[1] = readTrackTags(NextTracksTable[1][1])
+        --ac.log("--------------------------------------------------------------------")
+        --ac.log("Track Title:", nextTrackTitle)
+        --ac.log("Tags Allow To Play:", tracksTagsAllowToPlay[1])
+        if tracksTagsAllowToPlay[1] then
+            local sampleSize = #NextTracksTable
+            if sampleSize > 1 then
+                for i = 1, sampleSize do
+                    tracksLastPlayedTime[i] = TracksMemory[readTrackTags(NextTracksTable[i][1])] or 0
+                    if i > 1 then
+                        tracksTagsAllowToPlay[i] = readTrackTags(NextTracksTable[i][1])
+                    end
+                end
             end
 
             local day = 86400
             local daychance = math.random()
-            if tagsAllowToPlay and
-            ((track1LastPlayedTime < os.time()-(day*7) and daychance <= 0.1) or
-            (track1LastPlayedTime < os.time()-(day*14) and daychance <= 0.2) or
-            (track1LastPlayedTime < os.time()-(day*21) and daychance <= 0.4) or
-            (track1LastPlayedTime < os.time()-(day*28))) then
-                tagsAllowToPlay = true
-            elseif tagsAllowToPlay and
-            (track1LastPlayedTime <= track2LastPlayedTime or track2TagsAllowToPlay == false) and
-            (track1LastPlayedTime <= track3LastPlayedTime or track3TagsAllowToPlay == false) and
-            (track1LastPlayedTime <= track4LastPlayedTime or track4TagsAllowToPlay == false) and
-            (track1LastPlayedTime <= track5LastPlayedTime or track5TagsAllowToPlay == false) then
-                tagsAllowToPlay = true
-            else
-                tagsAllowToPlay = false
+            local daychanceAllowsToPlay, nextTracksAllowToPlay
+
+            --ac.log("Track Was Last Played:", math.ceil((os.time() - tracksLastPlayedTime[1])/(day)*100)/100, " Days Ago")
+            for i = 1, 10 do -- We may allow tracks that have not been played for a while, with increasing chance depending on how long ago that was.
+                if tracksLastPlayedTime[1] < os.time()-day*7*i and daychance <= 0.1*i then
+                    daychanceAllowsToPlay = true
+                    --ac.log("daychance allowed it to play")
+                    break
+                else
+                    daychanceAllowsToPlay = false
+                end
             end
+
+            if not daychanceAllowsToPlay and sampleSize > 1 then
+                for i = 2, sampleSize do
+                    if tracksLastPlayedTime[1] <= tracksLastPlayedTime[i] or tracksTagsAllowToPlay[i] == false then
+                        nextTracksAllowToPlay = true
+                    else
+                        nextTracksAllowToPlay = false
+                        --ac.log("Next Tested Track,", readTrackTags(NextTracksTable[i][1]), "Was played: ", math.ceil((os.time() - tracksLastPlayedTime[i])/(day)*100)/100, " Days Ago so it disallowed the choice of this one.")
+                        break
+                    end
+                end
+            else
+                nextTracksAllowToPlay = true
+            end
+
+            --ac.log("sampleSize", sampleSize, ", daychanceAllowsToPlay", daychanceAllowsToPlay, ", nextTracksAllowToPlay", nextTracksAllowToPlay)
+            if not (daychanceAllowsToPlay or nextTracksAllowToPlay) then
+                --ac.log("This track is not allowed to play")
+                tracksTagsAllowToPlay[1] = false
+            end
+
         end
 
-        if tagsAllowToPlay then
+        if tracksTagsAllowToPlay[1] then
             TrackChoosen = true
-            FilePath = NextTrack1[2]
+            FilePath = NextTracksTable[1][2]
             CurrentlyPlaying = nextTrackTitle
         end
 
@@ -1090,10 +1094,10 @@ function getNewTrack()
         if TrackChoosen then
             --ac.log(FilePath)
             nowplayingiconcoverart = getCoverArt(CurrentlyPlaying)
-            TracksMemory[readTrackTags(NextTrack1[1])] = os.time()
-            local stringifiedTracksMemory = stringify(TracksMemory, true, 1000000)
-            TrackLastPlayedMemory:set("lastplayedtimes", "table", stringifiedTracksMemory)
-            TrackLastPlayedMemory:save()
+            TracksMemory[readTrackTags(NextTracksTable[1][1])] = os.time()
+            local trackMemoryFile = ac.INIConfig.load(ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/TracksPlayedMemory/" .. readTrackTags(NextTracksTable[1][1]) ..".ini", ac.INIFormat.Extended)
+            trackMemoryFile:set("lastplayedtimes", "time", os.time())
+            trackMemoryFile:save()
 
             io.save(ac.getFolder(ac.FolderID.ACApps) .. "/lua/DynamicMusicPlayer/OBS Stuff/tracktitle.txt", CurrentlyPlaying, false)
             CoverArtExportCanvas:update(RenderCoverArtExportCanvas)
@@ -1865,7 +1869,7 @@ function script.windowNowPlaying()
     
     ac.setWindowSizeConstraints('nowplaying', vec2(windowWidth.x+windowWidthRange+75*NowPlayingWidgetSize,100*NowPlayingWidgetSize), vec2(windowWidth.x+windowWidthRange+75*NowPlayingWidgetSize,100*NowPlayingWidgetSize))
 
-    if (not EnableNowPlayingWidgetFadeout) or (CurrentTrack:currentTime() < NowPlayingWidgetFadeoutTime and CurrentTrack:currentTime() > 0.5) then
+    if CurrentTrack and ((not EnableNowPlayingWidgetFadeout) or (CurrentTrack:currentTime() < NowPlayingWidgetFadeoutTime and CurrentTrack:currentTime() > 0.5)) then
         NowPlayingOpacityTarget = 1
     else
         NowPlayingOpacityTarget = 0
