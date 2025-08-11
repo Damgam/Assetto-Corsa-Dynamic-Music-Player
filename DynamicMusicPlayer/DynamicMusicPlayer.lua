@@ -438,63 +438,6 @@ function updateRaceStatusData()
         TimeIntensity = 0
         LapIntensity = 0
     end
-    
-    if (not Session.isTimedRace) and Session.type == 3 and (not Sim.isReplayActive) then
-
-        if LapIntensity > 0.97 then -- boost the volume a little near the end of the race
-            TargetVolumeMultiplier = math.min(TargetVolumeMultiplier + TargetVolumeMultiplier*0.20, 1)
-        elseif LapIntensity > 0.95 then
-            TargetVolumeMultiplier = math.min(TargetVolumeMultiplier + TargetVolumeMultiplier*0.15, 1)
-        elseif LapIntensity > 0.93 then
-            TargetVolumeMultiplier = math.min(TargetVolumeMultiplier + TargetVolumeMultiplier*0.10, 1)
-        elseif LapIntensity > 0.91 then
-            TargetVolumeMultiplier = math.min(TargetVolumeMultiplier + TargetVolumeMultiplier*0.05, 1)
-        end
-
-        if LapIntensity < 0.03 then -- boost the volume a little at the start of the race
-            TargetVolumeMultiplier = math.min(TargetVolumeMultiplier + TargetVolumeMultiplier*0.20, 1)
-        elseif LapIntensity < 0.05 then
-            TargetVolumeMultiplier = math.min(TargetVolumeMultiplier + TargetVolumeMultiplier*0.15, 1)
-        elseif LapIntensity < 0.07 then
-            TargetVolumeMultiplier = math.min(TargetVolumeMultiplier + TargetVolumeMultiplier*0.10, 1)
-        elseif LapIntensity < 0.09 then
-            TargetVolumeMultiplier = math.min(TargetVolumeMultiplier + TargetVolumeMultiplier*0.05, 1)
-        end
-
-    elseif Session.type == 3 and (not Sim.isReplayActive) then
-
-        if TimeIntensity > 0.97 then -- boost the volume a little near the end of the race
-            TargetVolumeMultiplier = math.min(TargetVolumeMultiplier + TargetVolumeMultiplier*0.20, 1)
-        elseif TimeIntensity > 0.95 then
-            TargetVolumeMultiplier = math.min(TargetVolumeMultiplier + TargetVolumeMultiplier*0.15, 1)
-        elseif TimeIntensity > 0.93 then
-            TargetVolumeMultiplier = math.min(TargetVolumeMultiplier + TargetVolumeMultiplier*0.10, 1)
-        elseif TimeIntensity > 0.91 then
-            TargetVolumeMultiplier = math.min(TargetVolumeMultiplier + TargetVolumeMultiplier*0.05, 1)
-        end
-
-        if TimeIntensity < 0.03 then -- boost the volume a little at the start of the race
-            TargetVolumeMultiplier = math.min(TargetVolumeMultiplier + TargetVolumeMultiplier*0.20, 1)
-        elseif TimeIntensity < 0.05 then
-            TargetVolumeMultiplier = math.min(TargetVolumeMultiplier + TargetVolumeMultiplier*0.15, 1)
-        elseif TimeIntensity < 0.07 then
-            TargetVolumeMultiplier = math.min(TargetVolumeMultiplier + TargetVolumeMultiplier*0.10, 1)
-        elseif TimeIntensity < 0.09 then
-            TargetVolumeMultiplier = math.min(TargetVolumeMultiplier + TargetVolumeMultiplier*0.05, 1)
-        end
-    end
-    
-    if ((not Sim.isOnlineRace) or CSPBuild >= 2715) and Session.type == 3 and (not Sim.isReplayActive) then -- Positions are broken in online on CSP 0.2.0 and below, so we only enable this feature on the recent versions
-        if PlayerCarRacePosition == 1 then -- boost the volume a little when player is doing well
-            TargetVolumeMultiplier = math.min(TargetVolumeMultiplier + TargetVolumeMultiplier*0.20, 1)
-        elseif PlayerCarRacePosition <= 3 then
-            TargetVolumeMultiplier = math.min(TargetVolumeMultiplier + TargetVolumeMultiplier*0.15, 1)
-        elseif PlayerCarRacePosition <= 5 then
-            TargetVolumeMultiplier = math.min(TargetVolumeMultiplier + TargetVolumeMultiplier*0.10, 1)
-        elseif PlayerCarRacePosition <= 7 then
-            TargetVolumeMultiplier = math.min(TargetVolumeMultiplier + TargetVolumeMultiplier*0.05, 1)
-        end
-    end
 
     if MusicType and ((not DontSkipCurrentTrack) or TrackSwitched or (PlayerFinished and (not PlayedFinishTrack) and FinishMusic[1])) and (
     (MusicType  == "replay" and (not Sim.isReplayActive) and EnableReplayPlaylist) or -- We're not in replay but replay music is playing
@@ -522,26 +465,35 @@ function updateRaceStatusData()
         FadeInSpeedMultiplier = 1
     end
 
-    if MusicType and ((MusicType ~= "finish" and PlayerFinished) or TrackSwitched) then
-        FadeOutSpeedMultiplier = 10
-    elseif SessionSwitched then
-        FadeOutSpeedMultiplier = 2/ConfigFadeOutSpeed
-    else
-        FadeOutSpeedMultiplier = 1
+    if not (SessionSwitched or TrackSwitched) and Sim.timeToSessionStart < 0 and (not Sim.isReplayActive) then
+        if Sim.timeToSessionStart > -40000 then
+            FadeOutSpeedMultiplier = FadeOutSpeedMultiplier * 0
+            TargetVolumeMultiplier = 1
+        elseif Sim.timeToSessionStart > -60000 then
+            FadeOutSpeedMultiplier = FadeOutSpeedMultiplier * 0.05
+            TargetVolumeMultiplier = math.max(TargetVolumeMultiplier, 0.9)
+        elseif Sim.timeToSessionStart > -80000 then
+            FadeOutSpeedMultiplier = FadeOutSpeedMultiplier * 0.1
+            TargetVolumeMultiplier = math.max(TargetVolumeMultiplier, 0.8)
+        elseif Sim.timeToSessionStart > -100000 then
+            FadeOutSpeedMultiplier = FadeOutSpeedMultiplier * 0.2
+            TargetVolumeMultiplier = math.max(TargetVolumeMultiplier, 0.7)
+        elseif Sim.timeToSessionStart > -120000 then
+            FadeOutSpeedMultiplier = FadeOutSpeedMultiplier * 0.4
+            TargetVolumeMultiplier = math.max(TargetVolumeMultiplier, 0.6)
+        elseif Sim.timeToSessionStart > -120000 then
+            FadeOutSpeedMultiplier = FadeOutSpeedMultiplier * 0.6
+            TargetVolumeMultiplier = math.max(TargetVolumeMultiplier, 0.5)
+        elseif Sim.timeToSessionStart > -140000 then
+            FadeOutSpeedMultiplier = FadeOutSpeedMultiplier * 0.8
+            TargetVolumeMultiplier = math.max(TargetVolumeMultiplier, 0.4)
+        end
     end
 
-    if not (SessionSwitched or TrackSwitched) and Sim.timeToSessionStart < 0 and (not Sim.isReplayActive) then
-        if Sim.timeToSessionStart > -20000 then
-            FadeOutSpeedMultiplier = FadeOutSpeedMultiplier * 0.05
-        elseif Sim.timeToSessionStart > -30000 then
-            FadeOutSpeedMultiplier = FadeOutSpeedMultiplier * 0.1
-        elseif Sim.timeToSessionStart > -40000 then
-            FadeOutSpeedMultiplier = FadeOutSpeedMultiplier * 0.2
-        elseif Sim.timeToSessionStart > -50000 then
-            FadeOutSpeedMultiplier = FadeOutSpeedMultiplier * 0.4
-        elseif Sim.timeToSessionStart > -60000 then
-            FadeOutSpeedMultiplier = FadeOutSpeedMultiplier * 0.75
-        end
+    if MusicType and ((MusicType ~= "finish" and PlayerFinished) or TrackSwitched) then
+        FadeOutSpeedMultiplier = 10
+    else
+        FadeOutSpeedMultiplier = 1
     end
 
     if CurrentTrack then
@@ -669,7 +621,7 @@ local function readTrackTags(filename)
     -- Daytime/Nighttime
     if string.find(filename, "#Day") and string.find(filename, "#Night") then
         
-    elseif string.find(filename, "#Day") and ac.getSunAngle() >= 88 then -- night
+    elseif string.find(filename, "#Day") and ac.getSunAngle() >= 85 then -- night
         canPlay = false
     elseif string.find(filename, "#Night") and ac.getSunAngle() <= 92 then -- day
         canPlay = false
@@ -863,7 +815,6 @@ function getNewTrack()
     for attempts = 1,10000 do
         local NextTracksTable = {}
         local TrackChoosen = false
-
         if Sim.isReplayActive and EnableReplayPlaylist then
 
             if ReplayMusic[1] then
@@ -874,6 +825,8 @@ function getNewTrack()
                 for i = 1,math.ceil(math.max(5, #ReplayMusic * 0.1)) do
                     if ReplayMusic[ReplayMusicCounter+i-1] then
                         NextTracksTable[i] = ReplayMusic[ReplayMusicCounter+i-1]
+                    else
+                        NextTracksTable[i] = ReplayMusic[ReplayMusicCounter+i-1-#ReplayMusic]
                     end
                 end
             else
@@ -884,6 +837,8 @@ function getNewTrack()
                 for i = 1,math.ceil(math.max(5, #OtherMusic * 0.1)) do
                     if OtherMusic[OtherMusicCounter+i-1] then
                         NextTracksTable[i] = OtherMusic[OtherMusicCounter+i-1]
+                    else
+                        NextTracksTable[i] = OtherMusic[OtherMusicCounter+i-1-#OtherMusic]
                     end
                 end
             end
@@ -899,6 +854,8 @@ function getNewTrack()
                 for i = 1,math.ceil(math.max(5, #FinishPodiumMusic * 0.1)) do
                     if FinishPodiumMusic[FinishPodiumMusicCounter+i-1] then
                         NextTracksTable[i] = FinishPodiumMusic[FinishPodiumMusicCounter+i-1]
+                    else
+                        NextTracksTable[i] = FinishPodiumMusic[FinishPodiumMusicCounter+i-1-#FinishPodiumMusic]
                     end
                 end
             elseif FinishMusic[1] then
@@ -909,6 +866,8 @@ function getNewTrack()
                 for i = 1,math.ceil(math.max(5, #FinishMusic * 0.1)) do
                     if FinishMusic[FinishMusicCounter+i-1] then
                         NextTracksTable[i] = FinishMusic[FinishMusicCounter+i-1]
+                    else
+                        NextTracksTable[i] = FinishMusic[FinishMusicCounter+i-1-#FinishMusic]
                     end
                 end
             else
@@ -919,6 +878,8 @@ function getNewTrack()
                 for i = 1,math.ceil(math.max(5, #OtherMusic * 0.1)) do
                     if OtherMusic[OtherMusicCounter+i-1] then
                         NextTracksTable[i] = OtherMusic[OtherMusicCounter+i-1]
+                    else
+                        NextTracksTable[i] = OtherMusic[OtherMusicCounter+i-1-#OtherMusic]
                     end
                 end
             end
@@ -933,6 +894,8 @@ function getNewTrack()
             for i = 1,math.ceil(math.max(5, #IdleMusic * 0.1)) do
                 if IdleMusic[IdleMusicCounter+i-1] then
                     NextTracksTable[i] = IdleMusic[IdleMusicCounter+i-1]
+                else
+                    NextTracksTable[i] = IdleMusic[IdleMusicCounter+i-1-#IdleMusic]
                 end
             end
             MusicType = "idle"
@@ -946,6 +909,8 @@ function getNewTrack()
                 for i = 1,math.ceil(math.max(5, #PracticeMusic * 0.1)) do
                     if PracticeMusic[PracticeMusicCounter+i-1] then
                         NextTracksTable[i] = PracticeMusic[PracticeMusicCounter+i-1]
+                    else
+                        NextTracksTable[i] = PracticeMusic[PracticeMusicCounter+i-1-#PracticeMusic]
                     end
                 end
             else
@@ -956,6 +921,8 @@ function getNewTrack()
                 for i = 1,math.ceil(math.max(5, #OtherMusic * 0.1)) do
                     if OtherMusic[OtherMusicCounter+i-1] then
                         NextTracksTable[i] = OtherMusic[OtherMusicCounter+i-1]
+                    else
+                        NextTracksTable[i] = OtherMusic[OtherMusicCounter+i-1-#OtherMusic]
                     end
                 end
             end
@@ -971,6 +938,8 @@ function getNewTrack()
                 for i = 1,math.ceil(math.max(5, #QualificationMusic * 0.1)) do
                     if QualificationMusic[QualificationMusicCounter+i-1] then
                         NextTracksTable[i] = QualificationMusic[QualificationMusicCounter+i-1]
+                    else
+                        NextTracksTable[i] = QualificationMusic[QualificationMusicCounter+i-1-#QualificationMusic]
                     end
                 end
             else
@@ -981,6 +950,8 @@ function getNewTrack()
                 for i = 1,math.ceil(math.max(5, #OtherMusic * 0.1)) do
                     if OtherMusic[OtherMusicCounter+i-1] then
                         NextTracksTable[i] = OtherMusic[OtherMusicCounter+i-1]
+                    else
+                        NextTracksTable[i] = OtherMusic[OtherMusicCounter+i-1-#OtherMusic]
                     end
                 end
             end
@@ -996,6 +967,8 @@ function getNewTrack()
                 for i = 1,math.ceil(math.max(5, #RaceMusic * 0.1)) do
                     if RaceMusic[RaceMusicCounter+i-1] then
                         NextTracksTable[i] = RaceMusic[RaceMusicCounter+i-1]
+                    else
+                        NextTracksTable[i] = RaceMusic[RaceMusicCounter+i-1-#RaceMusic]
                     end
                 end
             else
@@ -1006,6 +979,8 @@ function getNewTrack()
                 for i = 1,math.ceil(math.max(5, #OtherMusic * 0.1)) do
                     if OtherMusic[OtherMusicCounter+i-1] then
                         NextTracksTable[i] = OtherMusic[OtherMusicCounter+i-1]
+                    else
+                        NextTracksTable[i] = OtherMusic[OtherMusicCounter+i-1-#OtherMusic]
                     end
                 end
             end
@@ -1020,6 +995,8 @@ function getNewTrack()
             for i = 1,math.ceil(math.max(5, #OtherMusic * 0.1)) do
                 if OtherMusic[OtherMusicCounter+i-1] then
                     NextTracksTable[i] = OtherMusic[OtherMusicCounter+i-1]
+                else
+                    NextTracksTable[i] = OtherMusic[OtherMusicCounter+i-1-#OtherMusic]
                 end
             end
             MusicType = "other"
@@ -1044,24 +1021,17 @@ function getNewTrack()
                 end
             end
 
-            local day = 86400
-            local daychance = math.random()
-            local daychanceAllowsToPlay, nextTracksAllowToPlay
-
-            --ac.log("Track Was Last Played:", math.ceil((os.time() - tracksLastPlayedTime[1])/(day)*100)/100, " Days Ago")
-            for i = 1, 10 do -- We may allow tracks that have not been played for a while, with increasing chance depending on how long ago that was.
-                if tracksLastPlayedTime[1] < os.time()-day*7*i and daychance <= 0.1*i then
-                    daychanceAllowsToPlay = true
-                    --ac.log("daychance allowed it to play")
-                    break
-                else
-                    daychanceAllowsToPlay = false
-                end
-            end
-
-            if not daychanceAllowsToPlay and sampleSize > 1 then
+            allowDayChanceSkip = true
+            if sampleSize > 1 then
                 for i = 2, sampleSize do
-                    if tracksLastPlayedTime[1] <= tracksLastPlayedTime[i] or tracksTagsAllowToPlay[i] == false then
+                    if tracksLastPlayedTime[1] == 0 then
+                        nextTracksAllowToPlay = true
+                        break
+                    elseif tracksLastPlayedTime[i] == 0 then
+                        nextTracksAllowToPlay = false
+                        allowDayChanceSkip = false
+                        break
+                    elseif tracksLastPlayedTime[1] <= tracksLastPlayedTime[i] or tracksTagsAllowToPlay[i] == false then
                         nextTracksAllowToPlay = true
                     else
                         nextTracksAllowToPlay = false
@@ -1072,6 +1042,26 @@ function getNewTrack()
             else
                 nextTracksAllowToPlay = true
             end
+
+            local day = 86400
+            local daychance = math.random()
+            local daychanceAllowsToPlay, nextTracksAllowToPlay
+
+            if allowDayChanceSkip then
+                --ac.log("Track Was Last Played:", math.ceil((os.time() - tracksLastPlayedTime[1])/(day)*100)/100, " Days Ago")
+                for i = 1, 10 do -- We may allow tracks that have not been played for a while, with increasing chance depending on how long ago that was.
+                    if tracksLastPlayedTime[1] < os.time()-day*7*i and daychance <= 0.1*i then
+                        daychanceAllowsToPlay = true
+                        --ac.log("daychance allowed it to play")
+                        break
+                    else
+                        daychanceAllowsToPlay = false
+                    end
+                end
+            else
+                daychanceAllowsToPlay = false
+            end
+
 
             --ac.log("sampleSize", sampleSize, ", daychanceAllowsToPlay", daychanceAllowsToPlay, ", nextTracksAllowToPlay", nextTracksAllowToPlay)
             if not (daychanceAllowsToPlay or nextTracksAllowToPlay) then
@@ -1113,6 +1103,8 @@ end
 UpdateCounter = 0
 SkipAttempts = 0
 function script.update(dt)
+
+    ac.debug("sunangle", ac.getSunAngle())
     local gameDt = ac.getGameDeltaT()
     UpdateCounter = UpdateCounter+1
 
@@ -1140,12 +1132,12 @@ function script.update(dt)
         updateRaceStatusData()
     end
 
-    if (StartMusic == true and Sim.timeToSessionStart < 0) or 
+    if (StartMusic == true and Sim.timeToSessionStart < 0) or
     UpdateCounter%60 == 1 and
     EnableMusic and
     ConfigMaxVolume > 0 and
     HitValue == 0 and
-    (not CurrentTrack or CurrentTrack:currentTime() >= CurrentTrack:duration() - 1) and 
+    (not CurrentTrack or CurrentTrack:currentTime() >= CurrentTrack:duration() - 1) and
     (Session.type ~= 3 or (Session.type == 3 and (Sim.timeToSessionStart < 0 or Sim.timeToSessionStart >= 60000))) then -- Prepare playing new track
         updateRaceStatusData()
         if CurrentTrack then

@@ -1,7 +1,11 @@
 4.0
 - Idle music will now play properly for being in menu while not starting in pits.
 - Added new anti-repetition system.
-- Added export of track title/playtime and cover art for use with, for example, OBS streaming/recording.
+Stores data of when each track was played for the last time, and based on that makes a pick of tracks that have not been played for the longest time.
+- Added automatic export of track title/playtime and cover art for use with, for example, OBS streaming/recording.
+It may cause a tiny stutter when new track is picked up. (Option for turning this feature off is on the TODO list)
+- Removed volume boosts/reduction based on position and race progress.
+These were not really noticeable at work and were only annoyingly messing with volume balance without any obvious meaning behind it.
 
 3.3
 - Queue is now ignored when finish music is supposed to play.
