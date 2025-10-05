@@ -812,7 +812,7 @@ end
 
 function getNewTrack()
     --ac.log(TracksMemory)
-    for attempts = 1,1000 do
+    for attempts = 1,10000 do
         local NextTracksTable = {}
         local TrackChoosen = false
         if Sim.isReplayActive and EnableReplayPlaylist then
@@ -1025,7 +1025,7 @@ function getNewTrack()
             local day = 86400
             local daychance = math.random()
             local daychanceAllowsToPlay, nextTracksAllowToPlay
-            if sampleSize > 1 then
+            if sampleSize > 1 and attempts < #NextTracksTable then
                 for i = 2, sampleSize do
                     if tracksLastPlayedTime[1] == 0 then
                         nextTracksAllowToPlay = true
@@ -1040,9 +1040,6 @@ function getNewTrack()
                         nextTracksAllowToPlay = false
                         --ac.log("Next Tested Track,", readTrackTags(NextTracksTable[i][1]), "Was played: ", math.ceil((os.time() - tracksLastPlayedTime[i])/(day)*100)/100, " Days Ago so it disallowed the choice of this one.")
                         break
-                    end
-                    if i == sampleSize and nextTracksAllowToPlay == false then 
-                        nextTracksAllowToPlay = true
                     end
                 end
             else
