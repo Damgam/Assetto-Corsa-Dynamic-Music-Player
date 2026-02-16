@@ -704,37 +704,37 @@ local function readTrackTags(filename)
 
     -- Car Production Year Minimum
     local carProductionYear = ac.getCar(ac.getSim().focusedCar).year
-    if  string.find(filename, "#YearMin1900") and carProductionYear <= 1900 or
-        string.find(filename, "#YearMin1910") and carProductionYear <= 1910 or
-        string.find(filename, "#YearMin1920") and carProductionYear <= 1920 or
-        string.find(filename, "#YearMin1930") and carProductionYear <= 1930 or
-        string.find(filename, "#YearMin1940") and carProductionYear <= 1940 or
-        string.find(filename, "#YearMin1950") and carProductionYear <= 1950 or
-        string.find(filename, "#YearMin1960") and carProductionYear <= 1960 or
-        string.find(filename, "#YearMin1970") and carProductionYear <= 1970 or
-        string.find(filename, "#YearMin1980") and carProductionYear <= 1980 or
-        string.find(filename, "#YearMin1990") and carProductionYear <= 1990 or
-        string.find(filename, "#YearMin2000") and carProductionYear <= 2000 or
-        string.find(filename, "#YearMin2010") and carProductionYear <= 2010 or
-        string.find(filename, "#YearMin2020") and carProductionYear <= 2020 or
-        string.find(filename, "#YearMin2030") and carProductionYear <= 2030 then
+    if  string.find(filename, "#YearMin1900") and carProductionYear < 1900 or
+        string.find(filename, "#YearMin1910") and carProductionYear < 1910 or
+        string.find(filename, "#YearMin1920") and carProductionYear < 1920 or
+        string.find(filename, "#YearMin1930") and carProductionYear < 1930 or
+        string.find(filename, "#YearMin1940") and carProductionYear < 1940 or
+        string.find(filename, "#YearMin1950") and carProductionYear < 1950 or
+        string.find(filename, "#YearMin1960") and carProductionYear < 1960 or
+        string.find(filename, "#YearMin1970") and carProductionYear < 1970 or
+        string.find(filename, "#YearMin1980") and carProductionYear < 1980 or
+        string.find(filename, "#YearMin1990") and carProductionYear < 1990 or
+        string.find(filename, "#YearMin2000") and carProductionYear < 2000 or
+        string.find(filename, "#YearMin2010") and carProductionYear < 2010 or
+        string.find(filename, "#YearMin2020") and carProductionYear < 2020 or
+        string.find(filename, "#YearMin2030") and carProductionYear < 2030 then
             canPlay = false
     end
 
-    if  string.find(filename, "#YearMax1900") and carProductionYear >= 1900 or
-        string.find(filename, "#YearMax1910") and carProductionYear >= 1910 or
-        string.find(filename, "#YearMax1920") and carProductionYear >= 1920 or
-        string.find(filename, "#YearMax1930") and carProductionYear >= 1930 or
-        string.find(filename, "#YearMax1940") and carProductionYear >= 1940 or
-        string.find(filename, "#YearMax1950") and carProductionYear >= 1950 or
-        string.find(filename, "#YearMax1960") and carProductionYear >= 1960 or
-        string.find(filename, "#YearMax1970") and carProductionYear >= 1970 or
-        string.find(filename, "#YearMax1980") and carProductionYear >= 1980 or
-        string.find(filename, "#YearMax1990") and carProductionYear >= 1990 or
-        string.find(filename, "#YearMax2000") and carProductionYear >= 2000 or
-        string.find(filename, "#YearMax2010") and carProductionYear >= 2010 or
-        string.find(filename, "#YearMax2020") and carProductionYear >= 2020 or
-        string.find(filename, "#YearMax2030") and carProductionYear >= 2030 then
+    if  string.find(filename, "#YearMax1900") and carProductionYear > 1900 or
+        string.find(filename, "#YearMax1910") and carProductionYear > 1910 or
+        string.find(filename, "#YearMax1920") and carProductionYear > 1920 or
+        string.find(filename, "#YearMax1930") and carProductionYear > 1930 or
+        string.find(filename, "#YearMax1940") and carProductionYear > 1940 or
+        string.find(filename, "#YearMax1950") and carProductionYear > 1950 or
+        string.find(filename, "#YearMax1960") and carProductionYear > 1960 or
+        string.find(filename, "#YearMax1970") and carProductionYear > 1970 or
+        string.find(filename, "#YearMax1980") and carProductionYear > 1980 or
+        string.find(filename, "#YearMax1990") and carProductionYear > 1990 or
+        string.find(filename, "#YearMax2000") and carProductionYear > 2000 or
+        string.find(filename, "#YearMax2010") and carProductionYear > 2010 or
+        string.find(filename, "#YearMax2020") and carProductionYear > 2020 or
+        string.find(filename, "#YearMax2030") and carProductionYear > 2030 then
             canPlay = false
     end
 
@@ -1885,6 +1885,8 @@ function script.windowNowPlaying()
     end
 
 end
+
+require('NowPlayingV2')
 
 
 

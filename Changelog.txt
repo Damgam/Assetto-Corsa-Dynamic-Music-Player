@@ -6,6 +6,8 @@ Stores data of when each track was played for the last time, and based on that m
 It may cause a tiny stutter when new track is picked up. (Option for turning this feature off is on the TODO list)
 - Removed volume boosts/reduction based on position and race progress.
 These were not really noticeable at work and were only annoyingly messing with volume balance without any obvious meaning behind it.
+- Added fully customisable (through Lua code) Now Playing widgets, allowing people to easily create their own and share them around.
+- Fixed YearMin and YearMax tags not working properly for cars with round years.
 
 3.3
 - Queue is now ignored when finish music is supposed to play.
