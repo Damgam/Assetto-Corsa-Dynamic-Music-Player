@@ -1,4 +1,4 @@
-Dynamic Music Player for Assetto Corsa! 
+Dynamic Music Player for Assetto Corsa!
 Music Player that reacts to what's happening on the track, controlling music playlists and volume!
 
 IMPORTANT: IF YOU UPDATE FROM ANY OF THE 1.X VERSIONS INTO 2.0+, FRESH INSTALL IS HIGHLY RECOMMENDED. A LOT OF THINGS HAVE CHANGED AND YOUR APP WILL LIKELY MISBEHAVE IF YOU DON'T WIPE OFF ALL THE REMNANTS OF THE OLD VERSION. COPY YOUR MUSIC FOLDER SOMEWHERE, AND RE-ADD YOUR MUSIC TO NEW FOLDERS AFTER THE REINSTALL.
@@ -33,7 +33,8 @@ Features of this app:
 - Dynamic volume adjustments, reducing volume of the music when you're driving slow, crashing, have opponents nearby or when yellow and blue flags pop up,
 - Configurability via ingame Settings app. You can make it as complex or as simple as you like,
 - On-screen widget showing you currently playing track.
+- works on linux
 
 Known Issues:
-- If by any chance you got your Assetto Corsa to work on Linux, or some debloated version of Windows that is missing Microsoft applications, this app won't work there. It depends on Windows Media Player to exist on your system since that's what CSP Media API depends on. 
+- ~~If by any chance you got your Assetto Corsa to work on Linux, or some debloated version of Windows that is missing Microsoft applications, this app won't work there. It depends on Windows Media Player to exist on your system since that's what CSP Media API depends on.~~
 - If you find any other bugs, please report them in GitHub Issues Page
