@@ -251,7 +251,6 @@ CoverArtDir = '/Music/CoverArts'
 CoverArts = table.map(io.scanDir( __dirname .. CoverArtDir, '*'), function (x) return { string.sub(x, 1, #x - 4), CoverArtDir .. '/' .. x } end)
 CoverArtConfig = require('Music/CoverArtConfig')
 
-
 TargetVolume = -10
 TargetVolumeMultiplier = 1
 CurrentVolume = 0
@@ -621,9 +620,9 @@ local function readTrackTags(filename)
     -- Daytime/Nighttime
     if string.find(filename, "#Day") and string.find(filename, "#Night") then
         
-    elseif string.find(filename, "#Day") and ac.getSunAngle() >= 85 then -- night
+    elseif string.find(filename, "#Day") and ac.getSunAngle() >= 92 then -- night
         canPlay = false
-    elseif string.find(filename, "#Night") and ac.getSunAngle() <= 92 then -- day
+    elseif string.find(filename, "#Night") and ac.getSunAngle() <= 85 then -- day
         canPlay = false
     end
 
@@ -809,6 +808,45 @@ function getCoverArt(track)
     CoverArtCache[track] = CoverArtForThisTrack
     return CoverArtForThisTrack
 end
+
+--local SortMusic = false
+--if SortMusic then
+--    local SortMusicDirectories = {
+--        "Idle",
+--        "Finish",
+--        "FinishPodium",
+--        "Other",
+--        "Practice",
+--    }
+--    if true then
+--        for j = 1,#SortMusicDirectories do
+--            local TypeName = SortMusicDirectories[j]
+--            local Dir = '/Music/' .. TypeName
+--            local TrackList = table.map(io.scanDir( __dirname .. Dir, '*'), function (x) return { string.sub(x, 1, #x - 4), Dir .. '/' .. x } end)
+--            for i = 1,#TrackList do
+--                local FolderName = "Unsorted"
+--                --if CoverArtConfig[TrackList[i][1]] then
+--                --    FolderName = string.sub(CoverArtConfig[TrackList[i][1]], 1, -4)
+--                --end
+--                if getCoverArt(readTrackTags(TrackList[i][1])) then
+--                    FolderName = io.getFileName(getCoverArt(readTrackTags(TrackList[i][1])), true)
+--                end
+--                if not io.exists("G:/ACMusicSorted/" .. FolderName .. "/" .. TypeName) then
+--                    io.createDir("G:/ACMusicSorted/" .. FolderName .. "/" .. TypeName)
+--                end
+--                ac.log(TrackList[i][2])
+--                --if not io.exists("G:/ACMusicSorted/" .. TypeName .. "/" .. FolderName .. "/" .. TrackList[i][1] .. ".mp3") then
+--                    io.copyFile(
+--                        "F:/Steam Games/steamapps/common/assettocorsa/apps/lua/DynamicMusicPlayer/" .. TrackList[i][2],
+--                        "G:/ACMusicSorted/" .. FolderName .. "/" .. TypeName .. "/" .. TrackList[i][1] .. ".mp3",
+--                        true,
+--                        false
+--                    )
+--                --end
+--            end
+--        end
+--    end
+--end
 
 function getNewTrack()
     --ac.log(TracksMemory)
